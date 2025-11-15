@@ -10,6 +10,7 @@ struct Synthetic {
     fail_checkpoint: bool,
     fail_hide: Option<Identity>,
     fail_restore: Option<Identity>,
+    change_capture_identity: bool,
     effects: usize,
 }
 fn info(id: u64) -> WindowInfo {
@@ -58,6 +59,9 @@ impl Synthetic {
 }
 impl WindowAdapter for Synthetic {
     fn capture(&mut self, id: &Identity) -> Result<Original> {
+        if self.change_capture_identity {
+            return Ok(original(3));
+        }
         self.originals.get(id).cloned().ok_or("Gone".into())
     }
     fn alive(&self, id: &Identity) -> bool {
@@ -231,4 +235,20 @@ fn invalid_names_and_indices_are_errors() {
     assert!(engine.detach(group, 9).is_err());
     engine.rename(group, "  Research  ").unwrap();
     assert_eq!(engine.get(group).unwrap().name, "Research");
+}
+
+#[test]
+fn identity_changed_during_capture_never_becomes_a_group() {
+    let adapter = Synthetic {
+        change_capture_identity: true,
+        ..Synthetic::setup()
+    };
+    let mut engine = Groups::new(adapter);
+    assert!(
+        engine
+            .create("Work", &[info(1).identity, info(2).identity], bounds())
+            .is_err()
+    );
+    assert_eq!(engine.adapter.effects, 0);
+    assert!(engine.adapter.journal.is_empty());
 }

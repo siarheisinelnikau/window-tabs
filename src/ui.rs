@@ -74,7 +74,11 @@ const STRIP_CLOSE: i32 = 202;
 
 static MANAGER: AtomicIsize = AtomicIsize::new(0);
 static EVENT_PENDING: AtomicBool = AtomicBool::new(false);
-thread_local! { static APP: RefCell<Option<App>> = const { RefCell::new(None) }; }
+thread_local! {
+    static APP: RefCell<Option<App>> = const { RefCell::new(None) };
+    // Out-of-context WinEvent callbacks run on the UI thread that registered them.
+    static EVENT_WINDOWS: RefCell<BTreeSet<isize>> = const { RefCell::new(BTreeSet::new()) };
+}
 
 enum UpdateNotice {
     Checked(std::result::Result<Option<Available>, String>),
@@ -268,7 +272,7 @@ pub fn run() -> Result<()> {
 
 impl App {
     unsafe fn new(window: HWND, store: Store) -> Result<Self> {
-        let worker = controller::start(store.clone(), window as isize, STATE);
+        let worker = controller::start(store.clone(), window as isize, STATE)?;
         let mut app = Self {
             window,
             controls: HashMap::new(),
@@ -593,7 +597,10 @@ impl App {
         let group = self.selected_group();
         let member = self.member();
         match id {
-            ID_REFRESH => self.send(Command::Refresh),
+            ID_REFRESH => {
+                self.hook_pids.clear();
+                self.send(Command::Refresh);
+            }
             ID_CREATE => self.send(Command::Create(self.name(), self.selected_windows())),
             ID_RECOVER => self.send(Command::Recover),
             ID_STARTUP => self.send(Command::Startup(
@@ -871,6 +878,18 @@ impl App {
                         .map(|w| (&w.identity, &w.title))
                         .collect::<Vec<_>>()
                 );
+                if strip.window.is_null()
+                    || strip.tabs.is_null()
+                    || GetDlgItem(strip.window, STRIP_MENU).is_null()
+                    || GetDlgItem(strip.window, STRIP_CLOSE).is_null()
+                {
+                    SetWindowTextW(
+                        self.controls[&ID_STATUS],
+                        w!("Cannot create the tab strip. Restoring the affected group."),
+                    );
+                    let _ = self.worker.sender.try_send(Command::Close(group.id));
+                    continue;
+                }
                 if strip.signature != signature {
                     SendMessageW(strip.tabs, TCM_DELETEALLITEMS, 0, 0);
                     for (i, member) in group.members.iter().enumerate() {
@@ -951,9 +970,17 @@ impl App {
                 // Put the strip immediately above its active target, never globally topmost.
                 let target = platform::hwnd(&group.members[group.active].identity);
                 let previous = GetWindow(target, GW_HWNDPREV);
+                // Inserting into the topmost band could promote the strip. Stay in the ordinary band.
+                let insert_after = if !previous.is_null()
+                    && GetWindowLongPtrW(previous, GWL_EXSTYLE) as u32 & WS_EX_TOPMOST != 0
+                {
+                    HWND_TOP
+                } else {
+                    previous
+                };
                 SetWindowPos(
                     strip.window,
-                    previous,
+                    insert_after,
                     group.bounds.left,
                     y,
                     width,
@@ -974,6 +1001,18 @@ impl App {
         }
     }
     fn refresh_hooks(&mut self) {
+        EVENT_WINDOWS.with(|targets| {
+            *targets.borrow_mut() = self
+                .snapshot
+                .groups
+                .iter()
+                .flat_map(|g| {
+                    g.members
+                        .iter()
+                        .map(|w| platform::hwnd(&w.identity) as isize)
+                })
+                .collect()
+        });
         let pids: BTreeSet<_> = self
             .snapshot
             .groups
@@ -995,6 +1034,7 @@ impl App {
                 (EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_NAMECHANGE),
                 (EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND),
                 (EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MINIMIZEEND),
+                (EVENT_OBJECT_CLOAKED, EVENT_OBJECT_UNCLOAKED),
             ] {
                 let hook = unsafe {
                     SetWinEventHook(
@@ -1178,13 +1218,20 @@ fn post_update(mailbox: &Arc<Mutex<Option<UpdateNotice>>>, window: isize, notice
 unsafe extern "system" fn event_proc(
     _: HWINEVENTHOOK,
     event: u32,
-    _: HWND,
+    window: HWND,
     object: i32,
     child: i32,
     _: u32,
     _: u32,
 ) {
     if event >= EVENT_OBJECT_CREATE && (object != OBJID_WINDOW || child != 0) {
+        return;
+    }
+    if !EVENT_WINDOWS.with(|targets| {
+        targets
+            .try_borrow()
+            .is_ok_and(|targets| targets.contains(&(window as isize)))
+    }) {
         return;
     }
     let manager = MANAGER.load(Ordering::Relaxed);

@@ -129,6 +129,9 @@ impl<A: WindowAdapter> Groups<A> {
         self.adapter.checkpoint(&entries)
     }
     pub fn create(&mut self, name: &str, windows: &[Identity], bounds: Rect) -> Result<GroupId> {
+        if bounds.width() < 1 || bounds.height() < 1 {
+            return Err("Invalid window bounds.".into());
+        }
         if windows.len() < 2 {
             return Err("Select at least two eligible windows.".into());
         }
@@ -170,7 +173,11 @@ impl<A: WindowAdapter> Groups<A> {
             if !seen.insert(identity.clone()) || self.contains(identity) {
                 return Err("A window is duplicated or already belongs to a group.".into());
             }
-            members.push(self.adapter.capture(identity)?);
+            let original = self.adapter.capture(identity)?;
+            if &original.info.identity != identity {
+                return Err("Window identity changed while capturing its original placement. Refresh the list.".into());
+            }
+            members.push(original);
         }
         Ok(members)
     }

@@ -255,7 +255,14 @@ pub fn discover() -> Vec<WindowInfo> {
 fn identity_matches(identity: &Identity) -> Result<bool> {
     unsafe {
         let window = hwnd(identity);
-        if IsWindow(window) == 0 || class(window) != identity.class {
+        if IsWindow(window) == 0 {
+            return Ok(false);
+        }
+        let current_class = class(window);
+        if current_class.is_empty() {
+            return Err("Cannot verify the window class. Its recovery entry was retained.".into());
+        }
+        if current_class != identity.class {
             return Ok(false);
         }
         let mut pid = 0;
@@ -298,6 +305,22 @@ fn responsive(window: HWND) -> Result<()> {
         );
     }
     Ok(())
+}
+
+pub(crate) fn shown(window: HWND) -> bool {
+    unsafe {
+        let mut cloaked: u32 = 0;
+        IsWindowVisible(window) != 0
+            && IsIconic(window) == 0
+            && GetWindowLongPtrW(window, GWL_EXSTYLE) as u32 & WS_EX_TOPMOST == 0
+            && DwmGetWindowAttribute(
+                window,
+                DWMWA_CLOAKED as u32,
+                &mut cloaked as *mut _ as *mut c_void,
+                4,
+            ) >= 0
+            && cloaked == 0
+    }
 }
 
 pub struct NativeAdapter {
@@ -344,10 +367,21 @@ impl WindowAdapter for NativeAdapter {
         verified(identity)?;
         let window = hwnd(identity);
         responsive(window)?;
+        let mut cloaked: u32 = 0;
+        if unsafe {
+            DwmGetWindowAttribute(
+                window,
+                DWMWA_CLOAKED as u32,
+                &mut cloaked as *mut _ as *mut c_void,
+                4,
+            )
+        } < 0
+            || cloaked != 0
+            || unsafe { GetWindowLongPtrW(window, GWL_EXSTYLE) } as u32 & WS_EX_TOPMOST != 0
+        {
+            return Err("The grouped window is now cloaked or topmost. Return it to the current desktop and normal mode before switching.".into());
+        }
         unsafe {
-            if IsHungAppWindow(window) != 0 {
-                return Err("The target application is not responding.".into());
-            }
             // Posting across input queues keeps the worker independent of the target's event loop.
             if IsIconic(window) != 0 || IsZoomed(window) != 0 {
                 ShowWindowAsync(window, SW_RESTORE);
