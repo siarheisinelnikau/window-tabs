@@ -11,9 +11,7 @@ use std::{
     },
     thread,
 };
-use windows_sys::Win32::UI::WindowsAndMessaging::{
-    IsIconic, IsWindowVisible, IsZoomed, PostMessageW,
-};
+use windows_sys::Win32::UI::WindowsAndMessaging::{IsIconic, IsZoomed, PostMessageW};
 
 #[derive(Clone)]
 pub struct GroupView {
@@ -258,8 +256,7 @@ impl Controller {
                 .iter()
                 .enumerate()
                 .find(|(index, member)| {
-                    *index != active
-                        && unsafe { IsWindowVisible(platform::hwnd(&member.info.identity)) != 0 }
+                    *index != active && platform::shown(platform::hwnd(&member.info.identity))
                 })
                 .map(|(index, _)| index);
             if let Some(index) = external {
@@ -298,7 +295,7 @@ impl Controller {
             .iter()
             .map(|g| {
                 let window = platform::hwnd(&g.selected().unwrap().info.identity);
-                let shown = unsafe { IsIconic(window) == 0 && IsWindowVisible(window) != 0 };
+                let shown = platform::shown(window);
                 let mut members: Vec<_> = g.members.iter().map(|m| m.info.clone()).collect();
                 for member in &mut members {
                     // Titles are refreshed without sending messages into the target process.
@@ -337,7 +334,7 @@ impl Controller {
     }
 }
 
-pub fn start(store: Store, window: isize, message: u32) -> Worker {
+pub fn start(store: Store, window: isize, message: u32) -> Result<Worker> {
     let (sender, receiver) = mpsc::sync_channel(32);
     let mailbox = Arc::new(Mutex::new(None));
     let output = mailbox.clone();
@@ -359,6 +356,6 @@ pub fn start(store: Store, window: isize, message: u32) -> Worker {
             post(controller.snapshot(last_status.clone(), quit));
             if quit { break; }
         }
-    }).expect("Cannot start window worker");
-    Worker { sender, mailbox }
+    }).map_err(|e| format!("Cannot start window worker: {e}"))?;
+    Ok(Worker { sender, mailbox })
 }
