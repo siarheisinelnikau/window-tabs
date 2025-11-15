@@ -795,6 +795,9 @@ impl App {
             if let Some(strip) = self.strips.remove(&id) {
                 unsafe {
                     DestroyWindow(strip.window);
+                    if !strip.font.is_null() {
+                        DeleteObject(strip.font);
+                    }
                 }
             }
         }
@@ -1011,6 +1014,9 @@ impl App {
                 }
             }
         }
+        if !self.snapshot.quit {
+            self.send(Command::Sync);
+        }
     }
     fn check_update(&mut self) {
         if self.update_busy {
@@ -1133,6 +1139,9 @@ impl Drop for App {
             }
             for (_, strip) in self.strips.drain() {
                 DestroyWindow(strip.window);
+                if !strip.font.is_null() {
+                    DeleteObject(strip.font);
+                }
             }
             if !self.font.is_null() {
                 DeleteObject(self.font);

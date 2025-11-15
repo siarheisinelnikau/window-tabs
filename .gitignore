@@ -1,4 +1,13 @@
 /target/
 /dist/
 *.tmp
+*.pdb
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.log
+/.local/
+/.test-output/
 
