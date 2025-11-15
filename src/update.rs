@@ -38,7 +38,11 @@ pub fn select_release(json: &[u8], current: &str) -> Result<Option<Available>> {
     let version = Version::parse(release.tag_name.trim_start_matches('v'))
         .map_err(|e| format!("Invalid release version: {e}"))?;
     let installed = Version::parse(current).map_err(|e| e.to_string())?;
-    if release.draft || release.prerelease || !version.pre.is_empty() || version <= installed {
+    if release.draft
+        || release.prerelease
+        || !version.pre.is_empty()
+        || version.cmp_precedence(&installed).is_le()
+    {
         return Ok(None);
     }
     let name = format!("WindowTabs-v{version}.exe");
@@ -348,6 +352,7 @@ pub mod native {
             root.join("updates")
                 .join(format!("{}-{}", available.version, std::process::id()));
         fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
+        let directory = fs::canonicalize(directory).map_err(|e| e.to_string())?;
         let mut manifest = vec![];
         get(
             &available.checksums.browser_download_url,
@@ -426,6 +431,8 @@ pub mod native {
                 if result != WAIT_OBJECT_0 {
                     return Err("WindowTabs did not close. The update was not installed.".into());
                 }
+            } else if GetLastError() != ERROR_INVALID_PARAMETER {
+                return Err(err("Cannot wait for the running application"));
             }
         }
         // Stage on the destination volume, then replace in one filesystem operation.
