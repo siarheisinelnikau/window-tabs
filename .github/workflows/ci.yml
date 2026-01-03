@@ -1,0 +1,24 @@
+name: Build and synthetic tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify formatting, isolated tests, and Clippy
+        shell: pwsh
+        run: ./scripts/verify.ps1
+      - name: Build and inspect standalone x64 package
+        shell: pwsh
+        run: ./scripts/package.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WindowTabs-windows-x64
+          path: dist/v*/
+          if-no-files-found: error
+
