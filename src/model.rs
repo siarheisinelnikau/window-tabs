@@ -14,6 +14,14 @@ pub struct Rect {
 }
 
 impl Rect {
+    pub fn translated(self, dx: i32, dy: i32) -> Self {
+        Self {
+            left: self.left.saturating_add(dx),
+            top: self.top.saturating_add(dy),
+            right: self.right.saturating_add(dx),
+            bottom: self.bottom.saturating_add(dy),
+        }
+    }
     pub fn width(self) -> i32 {
         self.right.saturating_sub(self.left)
     }
@@ -70,6 +78,9 @@ pub struct Original {
     pub info: WindowInfo,
     pub placement: Placement,
     pub visible: bool,
+    /// Physical coordinates let recovery detect a removed monitor without mixing spaces.
+    #[serde(default)]
+    pub normal_screen: Option<Rect>,
 }
 
 pub trait WindowAdapter {
@@ -83,13 +94,15 @@ pub trait WindowAdapter {
     fn checkpoint(&mut self, originals: &[Original]) -> Result<()>;
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Group {
     pub id: GroupId,
     pub name: String,
     pub members: Vec<Original>,
     pub active: usize,
     pub bounds: Rect,
+    /// Once restoration starts, queued native requests must never race regrouping.
+    pub restoring: bool,
 }
 
 impl Group {
@@ -148,6 +161,7 @@ impl<A: WindowAdapter> Groups<A> {
             members,
             active: 0,
             bounds,
+            restoring: false,
         });
         if let Err(error) = self.checkpoint() {
             self.groups.pop();
@@ -182,6 +196,7 @@ impl<A: WindowAdapter> Groups<A> {
         Ok(members)
     }
     pub fn add(&mut self, id: GroupId, windows: &[Identity]) -> Result<()> {
+        self.require_active(id)?;
         if windows.is_empty() {
             return Err("Select at least one window to add.".into());
         }
@@ -201,6 +216,7 @@ impl<A: WindowAdapter> Groups<A> {
         self.activate(id, active, true)
     }
     pub fn activate(&mut self, id: GroupId, member: usize, focus: bool) -> Result<()> {
+        self.require_active(id)?;
         let index = self.index(id)?;
         let group = &self.groups[index];
         let identity = group
@@ -235,6 +251,7 @@ impl<A: WindowAdapter> Groups<A> {
         Ok(())
     }
     pub fn reorder(&mut self, id: GroupId, from: usize, to: usize) -> Result<()> {
+        self.require_active(id)?;
         let index = self.index(id)?;
         let group = &mut self.groups[index];
         if from >= group.members.len() || to >= group.members.len() {
@@ -254,18 +271,28 @@ impl<A: WindowAdapter> Groups<A> {
         let index = self.index(id)?;
         let group = &self.groups[index];
         let original = group.members.get(member).ok_or("Unknown tab.")?.clone();
-        if self.adapter.alive(&original.info.identity) {
-            self.adapter.restore(&original)?;
+        let was_active = group.active == member;
+        if self.adapter.alive(&original.info.identity)
+            && let Err(error) = self.adapter.restore(&original)
+        {
+            self.groups[index].restoring = true;
+            return Err(format!(
+                "Detachment did not finish: {error}. Close the group to retry restoration."
+            ));
         }
         self.remove_member(index, member);
         self.checkpoint()?;
-        if let Some(group) = self.get(id) {
+        if let Some(group) = self.get(id)
+            && was_active
+            && !group.restoring
+        {
             self.activate(id, group.active, false)?;
         }
         Ok(())
     }
     pub fn close(&mut self, id: GroupId) -> Result<()> {
         let index = self.index(id)?;
+        self.groups[index].restoring = true;
         let mut failed = vec![];
         let mut errors = vec![];
         for original in &self.groups[index].members {
@@ -300,6 +327,10 @@ impl<A: WindowAdapter> Groups<A> {
                 errors.push(e);
             }
         }
+        // Retry a failed final journal write even if every window was restored.
+        if let Err(error) = self.checkpoint() {
+            errors.push(error);
+        }
         if errors.is_empty() {
             Ok(())
         } else {
@@ -308,7 +339,9 @@ impl<A: WindowAdapter> Groups<A> {
     }
     pub fn prune(&mut self) -> Result<()> {
         let mut changed = false;
-        for group in &mut self.groups {
+        let mut remaining = self.groups.clone();
+        let mut reveal = vec![];
+        for group in &mut remaining {
             let active = group.selected().map(|m| m.info.identity.clone());
             let old_len = group.members.len();
             group
@@ -316,20 +349,34 @@ impl<A: WindowAdapter> Groups<A> {
                 .retain(|m| self.adapter.alive(&m.info.identity));
             changed |= old_len != group.members.len();
             group.active = active
-                .and_then(|a| group.members.iter().position(|m| m.info.identity == a))
+                .as_ref()
+                .and_then(|a| group.members.iter().position(|m| &m.info.identity == a))
                 .unwrap_or(0);
+            if !group.restoring
+                && !group.members.is_empty()
+                && active.is_some_and(|id| !group.members.iter().any(|m| m.info.identity == id))
+            {
+                reveal.push((group.id, group.active));
+            }
         }
-        self.groups.retain(|g| !g.members.is_empty());
+        remaining.retain(|g| !g.members.is_empty());
         if changed {
-            self.checkpoint()?;
-            let selections: Vec<_> = self.groups.iter().map(|g| (g.id, g.active)).collect();
-            for (id, active) in selections {
+            let entries: Vec<_> = remaining
+                .iter()
+                .flat_map(|g| g.members.iter().cloned())
+                .collect();
+            self.adapter.checkpoint(&entries)?;
+            self.groups = remaining;
+            // Removing an inactive member must not restore a minimized group.
+            // Changes in one group must not manipulate another group at all.
+            for (id, active) in reveal {
                 self.activate(id, active, false)?;
             }
         }
         Ok(())
     }
     pub fn set_bounds(&mut self, id: GroupId, bounds: Rect) -> Result<()> {
+        self.require_active(id)?;
         if bounds.width() < 1 || bounds.height() < 1 {
             return Err("Invalid window bounds.".into());
         }
@@ -353,6 +400,14 @@ impl<A: WindowAdapter> Groups<A> {
             .iter()
             .position(|g| g.id == id)
             .ok_or("Unknown group.".into())
+    }
+    fn require_active(&self, id: GroupId) -> Result<()> {
+        let group = self.get(id).ok_or("Unknown group.")?;
+        if group.restoring {
+            Err("This group is awaiting restoration. Retry Close group or Detach; switching and regrouping are disabled.".into())
+        } else {
+            Ok(())
+        }
     }
 }
 

@@ -714,7 +714,13 @@ impl App {
                     "{}  ·  {} tabs{}",
                     g.name,
                     g.members.len(),
-                    if g.shown { "" } else { " (minimized / hidden)" }
+                    if g.restoring {
+                        " (recovery required)"
+                    } else if g.shown {
+                        ""
+                    } else {
+                        " (minimized / hidden)"
+                    }
                 )
             }),
         );
@@ -771,6 +777,10 @@ impl App {
         if !self.snapshot.quit {
             self.closing = false;
         }
+        if self.snapshot.install_failed {
+            self.install_plan = None;
+            self.set(ID_UPDATE_STATUS, &format!("Update was not installed: {}. Resolve recovery errors and click Download and install again.", self.snapshot.status));
+        }
         self.refresh_strips();
         self.refresh_hooks();
         if self.snapshot.ready && !self.startup_processed {
@@ -780,7 +790,8 @@ impl App {
             }
         }
         if self.snapshot.quit {
-            if let Some(plan) = self.install_plan.take()
+            if self.snapshot.install_ready
+                && let Some(plan) = self.install_plan.take()
                 && let Err(error) = update::native::launch_helper(&plan)
             {
                 fatal(&error);
@@ -1086,6 +1097,13 @@ impl App {
         if self.update_busy {
             return;
         }
+        if self.snapshot.recovery > 0 {
+            self.set(
+                ID_UPDATE_STATUS,
+                "Recover the previous session before downloading and installing an update.",
+            );
+            return;
+        }
         let Some(available) = self.available.clone() else {
             return;
         };
@@ -1134,7 +1152,7 @@ impl App {
             Some(UpdateNotice::Downloaded(result))=>{
                 self.update_busy=false;
                 match result {
-                    Ok(plan)=>{self.install_plan=Some(plan);self.set(ID_UPDATE_STATUS,"Verified. Restoring groups before installation and restart…");self.closing=true;self.send(Command::Quit);},
+                    Ok(plan)=>{self.install_plan=Some(plan);self.set(ID_UPDATE_STATUS,"Verified. Restoring groups before installation and restart…");self.closing=true;self.send(Command::InstallAndQuit);},
                     Err(error)=>self.set(ID_UPDATE_STATUS,&format!("Installation failed: {error}")),
                 }
             },
