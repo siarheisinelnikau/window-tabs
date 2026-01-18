@@ -22,6 +22,7 @@ pub struct GroupView {
     pub bounds: Rect,
     pub strip_height: i32,
     pub shown: bool,
+    pub restoring: bool,
 }
 #[derive(Clone, Default)]
 pub struct Snapshot {
@@ -32,6 +33,8 @@ pub struct Snapshot {
     pub status: String,
     pub ready: bool,
     pub quit: bool,
+    pub install_ready: bool,
+    pub install_failed: bool,
 }
 pub enum Command {
     Refresh,
@@ -50,6 +53,7 @@ pub enum Command {
     Startup(bool),
     Recover,
     Quit,
+    InstallAndQuit,
 }
 pub struct Worker {
     pub sender: SyncSender<Command>,
@@ -99,6 +103,7 @@ impl Controller {
                 | Command::Startup(_)
                 | Command::Delete(_)
                 | Command::Quit
+                | Command::InstallAndQuit
         );
         if modifies && !self.recovery.is_empty() {
             return Err("Recover the previous session before creating or changing groups.".into());
@@ -159,6 +164,9 @@ impl Controller {
             }
             Command::Save(id) => {
                 let group = self.engine.get(id).ok_or("Select an active group.")?;
+                if group.restoring {
+                    return Err("Finish restoring this group before saving a definition.".into());
+                }
                 if group.members.len() < 2 {
                     return Err("Saved groups require at least two members.".into());
                 }
@@ -238,9 +246,20 @@ impl Controller {
                 "Previous session recovered. Missing or exited processes were skipped.".into()
             }
             Command::Quit => {
-                self.engine.close_all()?;
+                // The startup recovery journal belongs to the previous session.
+                if self.recovery.is_empty() {
+                    self.engine.close_all()?;
+                }
                 quit = true;
                 "Groups restored. Closing WindowTabs.".into()
+            }
+            Command::InstallAndQuit => {
+                if !self.recovery.is_empty() {
+                    return Err("Recover the previous session before installing an update.".into());
+                }
+                self.engine.close_all()?;
+                quit = true;
+                "Groups restored. Installing update.".into()
             }
         };
         Ok((text, quit))
@@ -250,6 +269,9 @@ impl Controller {
         let ids: Vec<_> = self.engine.groups.iter().map(|g| g.id).collect();
         for id in ids {
             let group = self.engine.get(id).unwrap();
+            if group.restoring {
+                continue;
+            }
             let active = group.active;
             let external = group
                 .members
@@ -295,7 +317,7 @@ impl Controller {
             .iter()
             .map(|g| {
                 let window = platform::hwnd(&g.selected().unwrap().info.identity);
-                let shown = platform::shown(window);
+                let shown = !g.restoring && platform::shown(window);
                 let mut members: Vec<_> = g.members.iter().map(|m| m.info.clone()).collect();
                 for member in &mut members {
                     // Titles are refreshed without sending messages into the target process.
@@ -319,6 +341,7 @@ impl Controller {
                     bounds: g.bounds,
                     strip_height: platform::strip_height(window),
                     shown,
+                    restoring: g.restoring,
                 }
             })
             .collect();
@@ -330,6 +353,8 @@ impl Controller {
             status,
             ready: true,
             quit,
+            install_ready: false,
+            install_failed: false,
         }
     }
 }
@@ -351,9 +376,13 @@ pub fn start(store: Store, window: isize, message: u32) -> Result<Worker> {
         post(controller.snapshot("Select ordinary resizable windows, enter a group name, then choose Create group.".into(), false));
         let mut last_status = String::new();
         for command in receiver {
+            let install = matches!(&command, Command::InstallAndQuit);
             let (status, quit) = match controller.action(command) { Ok(result) => result, Err(e) => (format!("Error: {e}"), false) };
             if !status.is_empty() { last_status = status; }
-            post(controller.snapshot(last_status.clone(), quit));
+            let mut snapshot = controller.snapshot(last_status.clone(), quit);
+            snapshot.install_ready = install && quit;
+            snapshot.install_failed = install && !quit;
+            post(snapshot);
             if quit { break; }
         }
     }).map_err(|e| format!("Cannot start window worker: {e}"))?;

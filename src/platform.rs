@@ -106,6 +106,21 @@ fn to_rect(r: Rect) -> RECT {
     }
 }
 
+fn monitor_geometry(monitor: HMONITOR) -> Option<(Rect, [i32; 2])> {
+    let mut info: MONITORINFO = unsafe { zeroed() };
+    info.cbSize = size_of::<MONITORINFO>() as u32;
+    if unsafe { GetMonitorInfoW(monitor, &mut info) } == 0 {
+        return None;
+    }
+    Some((
+        from_rect(info.rcWork),
+        [
+            info.rcWork.left - info.rcMonitor.left,
+            info.rcWork.top - info.rcMonitor.top,
+        ],
+    ))
+}
+
 pub(crate) fn strip_height(window: HWND) -> i32 {
     let mut dpi = 96;
     let mut y = 96;
@@ -347,6 +362,9 @@ impl WindowAdapter for NativeAdapter {
             return Err("The application did not respond within 150 ms.".into());
         }
         let p = placement(window)?;
+        let (_, offset) =
+            monitor_geometry(unsafe { MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST) })
+                .ok_or("Cannot read the original monitor geometry.")?;
         Ok(Original {
             info,
             placement: Placement {
@@ -357,6 +375,7 @@ impl WindowAdapter for NativeAdapter {
                 normal: from_rect(p.rcNormalPosition),
             },
             visible: unsafe { IsWindowVisible(window) } != 0,
+            normal_screen: Some(from_rect(p.rcNormalPosition).translated(offset[0], offset[1])),
         })
     }
     fn alive(&self, identity: &Identity) -> bool {
@@ -422,6 +441,25 @@ impl WindowAdapter for NativeAdapter {
         let window = hwnd(&original.info.identity);
         responsive(window)?;
         let p = &original.placement;
+        let (_, current_offset) =
+            monitor_geometry(unsafe { MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST) })
+                .ok_or("Cannot read the recovery monitor geometry.")?;
+        let screen_normal = original
+            .normal_screen
+            .unwrap_or_else(|| p.normal.translated(current_offset[0], current_offset[1]));
+        let screen_rect = to_rect(screen_normal);
+        let offscreen = unsafe { MonitorFromRect(&screen_rect, MONITOR_DEFAULTTONULL).is_null() };
+        let normal = if offscreen {
+            let (work, offset) = monitor_geometry(unsafe {
+                MonitorFromRect(&screen_rect, MONITOR_DEFAULTTONEAREST)
+            })
+            .ok_or("Cannot choose a recovery monitor.")?;
+            screen_normal
+                .fit(work, 0)
+                .translated(-offset[0], -offset[1])
+        } else {
+            p.normal
+        };
         let restored_placement = WINDOWPLACEMENT {
             length: size_of::<WINDOWPLACEMENT>() as u32,
             // WPF_ASYNCWINDOWPLACEMENT avoids blocking behind a hung application's thread.
@@ -435,27 +473,23 @@ impl WindowAdapter for NativeAdapter {
                 x: p.max[0],
                 y: p.max[1],
             },
-            rcNormalPosition: to_rect(p.normal),
+            rcNormalPosition: to_rect(normal),
         };
         unsafe {
             if SetWindowPlacement(window, &restored_placement) == 0 {
                 return Err(error("Cannot restore original placement"));
             }
-            if original.visible {
-                ShowWindowAsync(window, p.show as i32);
-            } else {
-                ShowWindowAsync(window, SW_HIDE);
+            if !original.visible && ShowWindowAsync(window, SW_HIDE) == 0 {
+                return Err(error("Cannot restore original visibility"));
             }
         }
-        let normal = to_rect(p.normal);
-        let offscreen = unsafe { MonitorFromRect(&normal, MONITOR_DEFAULTTONULL).is_null() };
         await_state(&original.info.identity, |window| {
             let Ok(current) = placement(window) else {
                 return false;
             };
             (unsafe { IsWindowVisible(window) } != 0) == original.visible
                 && current.showCmd == p.show
-                && (offscreen || from_rect(current.rcNormalPosition) == p.normal)
+                && from_rect(current.rcNormalPosition) == normal
         })
     }
     fn focus(&mut self, identity: &Identity) {

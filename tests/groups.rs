@@ -12,6 +12,7 @@ struct Synthetic {
     fail_restore: Option<Identity>,
     change_capture_identity: bool,
     effects: usize,
+    presented: Vec<Identity>,
 }
 fn info(id: u64) -> WindowInfo {
     WindowInfo {
@@ -45,6 +46,7 @@ fn original(id: u64) -> Original {
             normal: bounds(),
         },
         visible: true,
+        normal_screen: None,
     }
 }
 impl Synthetic {
@@ -69,6 +71,7 @@ impl WindowAdapter for Synthetic {
     }
     fn present(&mut self, id: &Identity, _: Rect) -> Result<()> {
         self.effects += 1;
+        self.presented.push(id.clone());
         self.visible.insert(id.clone(), true);
         Ok(())
     }
@@ -250,5 +253,91 @@ fn identity_changed_during_capture_never_becomes_a_group() {
             .is_err()
     );
     assert_eq!(engine.adapter.effects, 0);
+    assert!(engine.adapter.journal.is_empty());
+}
+
+#[test]
+fn exit_only_reveals_the_group_that_lost_its_active_window() {
+    let mut engine = Groups::new(Synthetic::setup());
+    let first = create(&mut engine);
+    let second = engine
+        .create("Other", &[info(3).identity, info(4).identity], bounds())
+        .unwrap();
+    engine.adapter.presented.clear();
+    // Window 2 is inactive. Its exit must not unminimize either active member.
+    engine.adapter.originals.remove(&info(2).identity);
+    engine.prune().unwrap();
+    assert!(engine.adapter.presented.is_empty());
+    engine.adapter.originals.remove(&info(3).identity);
+    engine.prune().unwrap();
+    assert_eq!(engine.adapter.presented, vec![info(4).identity]);
+    assert_eq!(engine.get(first).unwrap().members.len(), 1);
+    assert_eq!(engine.get(second).unwrap().members.len(), 1);
+}
+
+#[test]
+fn failed_restore_is_never_regrouped_by_later_events() {
+    let mut engine = Groups::new(Synthetic::setup());
+    let group = create(&mut engine);
+    let other = engine
+        .create("Other", &[info(3).identity, info(4).identity], bounds())
+        .unwrap();
+    engine.adapter.fail_restore = Some(info(1).identity);
+    assert!(engine.close(group).is_err());
+    assert!(engine.get(group).unwrap().restoring);
+    engine.adapter.presented.clear();
+    engine.adapter.originals.remove(&info(3).identity);
+    engine.prune().unwrap();
+    assert_eq!(engine.adapter.presented, vec![info(4).identity]);
+    let effects = engine.adapter.effects;
+    assert!(engine.activate(group, 0, false).is_err());
+    assert!(engine.add(group, &[info(2).identity]).is_err());
+    assert_eq!(engine.adapter.effects, effects);
+    assert!(engine.get(other).is_some());
+    engine.adapter.fail_restore = None;
+    engine.close(group).unwrap();
+}
+
+#[test]
+fn failed_detach_enters_restore_only_mode_and_inactive_detach_does_not_reveal() {
+    let mut engine = Groups::new(Synthetic::setup());
+    let group = create(&mut engine);
+    engine.adapter.presented.clear();
+    engine.detach(group, 1).unwrap();
+    assert!(engine.adapter.presented.is_empty());
+    engine.adapter.fail_restore = Some(info(1).identity);
+    assert!(engine.detach(group, 0).is_err());
+    assert!(engine.get(group).unwrap().restoring);
+    assert!(engine.activate(group, 0, true).is_err());
+    engine.adapter.fail_restore = None;
+    engine.detach(group, 0).unwrap();
+    assert!(engine.groups.is_empty());
+}
+
+#[test]
+fn journal_failure_on_exit_can_be_retried_without_losing_the_active_exit() {
+    let mut engine = Groups::new(Synthetic::setup());
+    let group = create(&mut engine);
+    engine.adapter.originals.remove(&info(1).identity);
+    engine.adapter.fail_checkpoint = true;
+    assert!(engine.prune().is_err());
+    assert_eq!(engine.get(group).unwrap().members.len(), 2);
+    engine.adapter.fail_checkpoint = false;
+    engine.prune().unwrap();
+    assert_eq!(engine.get(group).unwrap().members.len(), 1);
+    assert!(engine.adapter.visible[&info(2).identity]);
+}
+
+#[test]
+fn shutdown_retries_the_final_journal_write() {
+    let mut engine = Groups::new(Synthetic::setup());
+    let group = create(&mut engine);
+    engine.adapter.fail_checkpoint = true;
+    assert!(engine.close(group).is_err());
+    assert!(engine.groups.is_empty());
+    assert!(engine.close_all().is_err());
+    assert!(!engine.adapter.journal.is_empty());
+    engine.adapter.fail_checkpoint = false;
+    engine.close_all().unwrap();
     assert!(engine.adapter.journal.is_empty());
 }
