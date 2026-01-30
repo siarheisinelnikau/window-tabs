@@ -109,6 +109,7 @@ struct App {
     cancel: Arc<AtomicBool>,
     store: Store,
     install_plan: Option<PathBuf>,
+    install_request_id: u64,
     closing: bool,
 }
 
@@ -290,6 +291,7 @@ impl App {
             cancel: Arc::new(AtomicBool::new(false)),
             store,
             install_plan: None,
+            install_request_id: 0,
             closing: false,
         };
         unsafe {
@@ -510,12 +512,23 @@ impl App {
         }
     }
     fn send(&mut self, command: Command) {
+        let install = matches!(&command, Command::InstallAndQuit(_));
         if let Err(error) = self.worker.sender.try_send(command) {
             self.set(
                 ID_STATUS,
                 &format!("Window worker is busy or unavailable: {error}. Try again."),
             );
             self.closing = false;
+            if install {
+                self.install_plan = None;
+                self.set(ID_UPDATE_STATUS, "Update was not installed because the window worker could not accept the request. Retry Download and install.");
+                unsafe {
+                    EnableWindow(
+                        self.controls[&ID_INSTALL],
+                        i32::from(self.available.is_some() && !self.update_busy),
+                    );
+                }
+            }
         }
     }
     fn selected_group(&self) -> Option<GroupId> {
@@ -777,9 +790,17 @@ impl App {
         if !self.snapshot.quit {
             self.closing = false;
         }
-        if self.snapshot.install_failed {
+        if self.install_plan.is_some()
+            && self.snapshot.install_result == Some((self.install_request_id, false))
+        {
             self.install_plan = None;
             self.set(ID_UPDATE_STATUS, &format!("Update was not installed: {}. Resolve recovery errors and click Download and install again.", self.snapshot.status));
+            unsafe {
+                EnableWindow(
+                    self.controls[&ID_INSTALL],
+                    i32::from(self.available.is_some() && !self.update_busy),
+                );
+            }
         }
         self.refresh_strips();
         self.refresh_hooks();
@@ -790,7 +811,7 @@ impl App {
             }
         }
         if self.snapshot.quit {
-            if self.snapshot.install_ready
+            if self.snapshot.install_result == Some((self.install_request_id, true))
                 && let Some(plan) = self.install_plan.take()
                 && let Err(error) = update::native::launch_helper(&plan)
             {
@@ -1152,7 +1173,7 @@ impl App {
             Some(UpdateNotice::Downloaded(result))=>{
                 self.update_busy=false;
                 match result {
-                    Ok(plan)=>{self.install_plan=Some(plan);self.set(ID_UPDATE_STATUS,"Verified. Restoring groups before installation and restart…");self.closing=true;self.send(Command::InstallAndQuit);},
+                    Ok(plan)=>{self.install_request_id+=1;self.install_plan=Some(plan);self.set(ID_UPDATE_STATUS,"Verified. Restoring groups before installation and restart…");self.closing=true;self.send(Command::InstallAndQuit(self.install_request_id));},
                     Err(error)=>self.set(ID_UPDATE_STATUS,&format!("Installation failed: {error}")),
                 }
             },

@@ -33,8 +33,7 @@ pub struct Snapshot {
     pub status: String,
     pub ready: bool,
     pub quit: bool,
-    pub install_ready: bool,
-    pub install_failed: bool,
+    pub install_result: Option<(u64, bool)>,
 }
 pub enum Command {
     Refresh,
@@ -53,7 +52,7 @@ pub enum Command {
     Startup(bool),
     Recover,
     Quit,
-    InstallAndQuit,
+    InstallAndQuit(u64),
 }
 pub struct Worker {
     pub sender: SyncSender<Command>,
@@ -65,16 +64,28 @@ struct Controller {
     settings: Settings,
     recovery: Vec<Original>,
     candidates: Vec<WindowInfo>,
+    settings_error: Option<String>,
 }
 impl Controller {
     fn open(store: Store) -> Result<Self> {
-        let settings = store.settings()?;
         let recovery = store.recovery()?;
+        let (settings, settings_error) = match store.settings() {
+            Ok(settings) => (settings, None),
+            Err(error) if !recovery.is_empty() => (
+                Settings {
+                    check_on_startup: false,
+                    ..Default::default()
+                },
+                Some(error),
+            ),
+            Err(error) => return Err(error),
+        };
         Ok(Self {
             engine: Groups::new(NativeAdapter { store }),
             settings,
             recovery,
             candidates: vec![],
+            settings_error,
         })
     }
     fn refresh(&mut self) {
@@ -95,6 +106,16 @@ impl Controller {
         initial.fit(platform::work_area(window), platform::strip_height(window))
     }
     fn action(&mut self, command: Command) -> Result<(String, bool)> {
+        if let Some(error) = &self.settings_error
+            && !matches!(
+                &command,
+                Command::Recover | Command::Refresh | Command::Sync | Command::Quit
+            )
+        {
+            return Err(format!(
+                "Settings were preserved because they cannot be read: {error}. Recover windows, then repair the settings file and restart WindowTabs."
+            ));
+        }
         let modifies = !matches!(
             command,
             Command::Refresh
@@ -103,7 +124,7 @@ impl Controller {
                 | Command::Startup(_)
                 | Command::Delete(_)
                 | Command::Quit
-                | Command::InstallAndQuit
+                | Command::InstallAndQuit(_)
         );
         if modifies && !self.recovery.is_empty() {
             return Err("Recover the previous session before creating or changing groups.".into());
@@ -253,7 +274,7 @@ impl Controller {
                 quit = true;
                 "Groups restored. Closing WindowTabs.".into()
             }
-            Command::InstallAndQuit => {
+            Command::InstallAndQuit(_) => {
                 if !self.recovery.is_empty() {
                     return Err("Recover the previous session before installing an update.".into());
                 }
@@ -353,9 +374,33 @@ impl Controller {
             status,
             ready: true,
             quit,
-            install_ready: false,
-            install_failed: false,
+            install_result: None,
         }
+    }
+    fn execute(
+        &mut self,
+        command: Command,
+        status: &mut String,
+        install_result: &mut Option<(u64, bool)>,
+    ) -> Snapshot {
+        let install = match &command {
+            Command::InstallAndQuit(id) => Some(*id),
+            _ => None,
+        };
+        let (text, quit) = match self.action(command) {
+            Ok(result) => result,
+            Err(error) => (format!("Error: {error}"), false),
+        };
+        if !text.is_empty() {
+            *status = text;
+        }
+        if let Some(id) = install {
+            *install_result = Some((id, quit));
+        }
+        let mut snapshot = self.snapshot(status.clone(), quit);
+        // Installation replies survive coalescing; IDs distinguish stale replies from retries.
+        snapshot.install_result = *install_result;
+        snapshot
     }
 }
 
@@ -373,18 +418,126 @@ pub fn start(store: Store, window: isize, message: u32) -> Result<Worker> {
             Err(error) => { post(Snapshot { status:error, ..Default::default() }); return; },
         };
         controller.refresh();
-        post(controller.snapshot("Select ordinary resizable windows, enter a group name, then choose Create group.".into(), false));
-        let mut last_status = String::new();
+        let initial_status = controller.settings_error.clone().unwrap_or_else(||"Select ordinary resizable windows, enter a group name, then choose Create group.".into());
+        post(controller.snapshot(initial_status.clone(), false));
+        let mut last_status = initial_status;
+        let mut last_install_result = None;
         for command in receiver {
-            let install = matches!(&command, Command::InstallAndQuit);
-            let (status, quit) = match controller.action(command) { Ok(result) => result, Err(e) => (format!("Error: {e}"), false) };
-            if !status.is_empty() { last_status = status; }
-            let mut snapshot = controller.snapshot(last_status.clone(), quit);
-            snapshot.install_ready = install && quit;
-            snapshot.install_failed = install && !quit;
+            let snapshot=controller.execute(command,&mut last_status,&mut last_install_result);
+            let quit=snapshot.quit;
             post(snapshot);
             if quit { break; }
         }
     }).map_err(|e| format!("Cannot start window worker: {e}"))?;
     Ok(Worker { sender, mailbox })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        fs,
+        path::PathBuf,
+        sync::atomic::{AtomicUsize, Ordering},
+    };
+    static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
+    struct Fixture(Store);
+    impl Fixture {
+        fn new() -> Self {
+            let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("target")
+                .join("test-fixtures")
+                .join(format!(
+                    "controller-{}-{}",
+                    std::process::id(),
+                    SEQUENCE.fetch_add(1, Ordering::Relaxed)
+                ));
+            fs::create_dir_all(&root).unwrap();
+            let store = Store::new(root);
+            store
+                .save_recovery(&[Original {
+                    info: WindowInfo {
+                        identity: Identity {
+                            handle: 1,
+                            pid: 1,
+                            started: 1,
+                            class: "Fixture".into(),
+                        },
+                        title: "Fixture".into(),
+                        executable: "fixture.exe".into(),
+                        bounds: Rect {
+                            left: 0,
+                            top: 0,
+                            right: 640,
+                            bottom: 480,
+                        },
+                    },
+                    placement: Placement {
+                        flags: 0,
+                        show: 1,
+                        min: [-1, -1],
+                        max: [-1, -1],
+                        normal: Rect {
+                            left: 0,
+                            top: 0,
+                            right: 640,
+                            bottom: 480,
+                        },
+                    },
+                    visible: true,
+                    normal_screen: None,
+                }])
+                .unwrap();
+            Self(store)
+        }
+    }
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            for name in ["settings.json", "recovery.json"] {
+                let _ = fs::remove_file(self.0.root.join(name));
+            }
+            let _ = fs::remove_dir(&self.0.root);
+        }
+    }
+    #[test]
+    fn corrupt_settings_do_not_block_recovery_or_get_overwritten() {
+        let fixture = Fixture::new();
+        let path = fixture.0.root.join("settings.json");
+        fs::write(&path, b"bad JSON").unwrap();
+        let mut controller = Controller::open(fixture.0.clone()).unwrap();
+        assert_eq!(controller.recovery.len(), 1);
+        assert!(!controller.settings.check_on_startup);
+        assert!(controller.action(Command::Startup(true)).is_err());
+        assert_eq!(fs::read(&path).unwrap(), b"bad JSON");
+        // Quit must not call the native adapter or clear the previous-session journal.
+        let journal = fs::read(fixture.0.root.join("recovery.json")).unwrap();
+        assert!(controller.action(Command::Quit).unwrap().1);
+        assert_eq!(
+            fs::read(fixture.0.root.join("recovery.json")).unwrap(),
+            journal
+        );
+    }
+    #[test]
+    fn install_refusal_survives_coalesced_events_and_has_a_retry_identity() {
+        let fixture = Fixture::new();
+        let mut controller = Controller::open(fixture.0.clone()).unwrap();
+        let mut status = String::new();
+        let mut result = None;
+        assert_eq!(
+            controller
+                .execute(Command::InstallAndQuit(1), &mut status, &mut result)
+                .install_result,
+            Some((1, false))
+        );
+        let event = controller.execute(Command::Sync, &mut status, &mut result);
+        assert_eq!(event.install_result, Some((1, false)));
+        assert!(!event.quit);
+        assert_eq!(
+            controller
+                .execute(Command::InstallAndQuit(2), &mut status, &mut result)
+                .install_result,
+            Some((2, false))
+        );
+        assert_eq!(fixture.0.recovery().unwrap().len(), 1);
+    }
 }

@@ -129,10 +129,63 @@ pub fn verify_pe(path: &Path) -> Result<()> {
     }
     file.seek(SeekFrom::Start(offset))
         .map_err(|e| e.to_string())?;
-    let mut pe = [0u8; 6];
+    let file_size = file.metadata().map_err(|e| e.to_string())?.len();
+    if file_size > MAX_EXE || offset < 64 {
+        return Err("Invalid executable size or header offset.".into());
+    }
+    let mut pe = [0u8; 24];
     file.read_exact(&mut pe).map_err(|e| e.to_string())?;
     if &pe[..4] != b"PE\0\0" || u16::from_le_bytes([pe[4], pe[5]]) != 0x8664 {
         return Err("The update is not a compatible x64 executable.".into());
+    }
+    let sections = u16::from_le_bytes([pe[6], pe[7]]) as usize;
+    let optional_size = u16::from_le_bytes([pe[20], pe[21]]) as usize;
+    let characteristics = u16::from_le_bytes([pe[22], pe[23]]);
+    if !(1..=96).contains(&sections)
+        || !(112..=4096).contains(&optional_size)
+        || characteristics & 0x0002 == 0
+        || characteristics & 0x2000 != 0
+    {
+        return Err("Asset is not a complete executable PE image.".into());
+    }
+    let mut optional = vec![0u8; optional_size];
+    file.read_exact(&mut optional)
+        .map_err(|e| format!("Truncated PE optional header: {e}"))?;
+    let read_u32 = |bytes: &[u8], index: usize| {
+        u32::from_le_bytes(bytes[index..index + 4].try_into().unwrap()) as u64
+    };
+    let entry = read_u32(&optional, 16);
+    let image_size = read_u32(&optional, 56);
+    let headers_size = read_u32(&optional, 60);
+    if u16::from_le_bytes([optional[0], optional[1]]) != 0x020b
+        || u16::from_le_bytes([optional[68], optional[69]]) != 2
+        || entry == 0
+        || entry >= image_size
+        || headers_size > file_size
+        || offset + 24 + optional_size as u64 + sections as u64 * 40 > headers_size
+    {
+        return Err("Asset has invalid PE32+ headers or is not a Windows GUI executable.".into());
+    }
+    let mut table = vec![0u8; sections * 40];
+    file.read_exact(&mut table)
+        .map_err(|e| format!("Truncated PE section table: {e}"))?;
+    let mut executable_entry = false;
+    for section in table.chunks_exact(40) {
+        let virtual_size = read_u32(section, 8);
+        let address = read_u32(section, 12);
+        let size = read_u32(section, 16);
+        let raw = read_u32(section, 20);
+        if size > 0 && (raw < headers_size || raw + size > file_size) {
+            return Err("Executable section data is truncated or overlaps the headers.".into());
+        }
+        if address + virtual_size.max(size) > image_size {
+            return Err("PE section exceeds the image size.".into());
+        }
+        executable_entry |=
+            entry >= address && entry < address + size && read_u32(section, 36) & 0x20000000 != 0;
+    }
+    if !executable_entry {
+        return Err("PE entry point is not backed by executable section data.".into());
     }
     Ok(())
 }
@@ -143,14 +196,40 @@ pub struct InstallPlan {
     pub target: PathBuf,
     pub staged: PathBuf,
     pub sha256: String,
+    pub original_sha256: String,
+    pub transaction_id: String,
 }
 
 impl InstallPlan {
+    pub fn transaction_paths(&self) -> Result<(PathBuf, PathBuf)> {
+        if self.transaction_id.len() != 32
+            || !self.transaction_id.bytes().all(|c| c.is_ascii_hexdigit())
+            || !self.target.is_absolute()
+            || self.original_sha256.len() != 64
+            || !self.original_sha256.bytes().all(|c| c.is_ascii_hexdigit())
+        {
+            return Err("Invalid update transaction identity.".into());
+        }
+        let parent = self
+            .target
+            .parent()
+            .ok_or("Missing installation directory.")?;
+        let prefix = format!(".WindowTabs-{}", self.transaction_id);
+        Ok((
+            parent.join(format!("{prefix}.update.tmp")),
+            parent.join(format!("{prefix}.previous.exe")),
+        ))
+    }
     pub fn validate(&self, helper: &Path) -> Result<()> {
+        self.transaction_paths()?;
         if !self.target.is_absolute()
             || !self.staged.is_absolute()
             || self.target == self.staged
             || self.target == helper
+            || self.staged == helper
+            || helper
+                .parent()
+                .is_some_and(|parent| self.target.starts_with(parent))
             || self
                 .target
                 .extension()
@@ -161,6 +240,16 @@ impl InstallPlan {
             || !self.sha256.bytes().all(|b| b.is_ascii_hexdigit())
         {
             return Err("Invalid update installation plan.".into());
+        }
+        if fs::canonicalize(&self.target).map_err(|e| e.to_string())? != self.target
+            || fs::canonicalize(&self.staged).map_err(|e| e.to_string())? != self.staged
+        {
+            return Err("Update paths changed or are not canonical.".into());
+        }
+        if hash_file(&self.target)? != self.original_sha256
+            || hash_file(helper)? != self.original_sha256
+        {
+            return Err("The installed executable or update helper changed since download. Check for updates again.".into());
         }
         if hash_file(&self.staged)? != self.sha256 {
             return Err("Update checksum mismatch; the installed executable was preserved.".into());
@@ -348,10 +437,26 @@ pub mod native {
         cancel: Arc<AtomicBool>,
         progress: impl FnMut(u64),
     ) -> Result<PathBuf> {
-        let directory =
-            root.join("updates")
-                .join(format!("{}-{}", available.version, std::process::id()));
-        fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
+        let updates = root.join("updates");
+        fs::create_dir_all(&updates).map_err(|e| e.to_string())?;
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|e| e.to_string())?
+            .as_nanos() as u64;
+        let mut reserved = None;
+        for attempt in 0..64u32 {
+            let id = format!("{timestamp:016x}{:08x}{attempt:08x}", std::process::id());
+            let path = updates.join(&id);
+            match fs::create_dir(&path) {
+                Ok(()) => {
+                    reserved = Some((path, id));
+                    break;
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(e) => return Err(e.to_string()),
+            }
+        }
+        let (directory, transaction_id) = reserved.ok_or("Cannot reserve an update directory.")?;
         let directory = fs::canonicalize(directory).map_err(|e| e.to_string())?;
         let mut manifest = vec![];
         get(
@@ -386,12 +491,21 @@ pub mod native {
             .and_then(fs::canonicalize)
             .map_err(|e| e.to_string())?;
         let helper = directory.join("WindowTabs-updater.exe");
-        fs::copy(&target, &helper).map_err(|e| format!("Cannot prepare update helper: {e}"))?;
+        let original_sha256 = hash_file(&target)?;
+        use crate::install::{InstallIo, NativeInstallIo};
+        NativeInstallIo
+            .copy_new(&target, &helper)
+            .map_err(|e| format!("Cannot prepare update helper: {e}"))?;
+        if hash_file(&helper)? != original_sha256 {
+            return Err("Installed executable changed while preparing the helper.".into());
+        }
         let plan = InstallPlan {
             parent_pid: std::process::id(),
             target,
             staged,
             sha256: expected,
+            original_sha256,
+            transaction_id,
         };
         let path = directory.join("install.json");
         storage::atomic_json(&path, &plan)?;
@@ -435,23 +549,7 @@ pub mod native {
                 return Err(err("Cannot wait for the running application"));
             }
         }
-        // Stage on the destination volume, then replace in one filesystem operation.
-        let replacement = plan.target.with_extension("update.tmp");
-        let backup = plan.target.with_extension("previous.exe");
-        fs::copy(&plan.staged, &replacement).map_err(|e| {
-            format!("Cannot write beside the executable. Move WindowTabs to a writable folder: {e}")
-        })?;
-        if hash_file(&replacement)? != plan.sha256 {
-            return Err("Staged update changed; installation stopped.".into());
-        }
-        fs::copy(&plan.target, &backup).map_err(|e| format!("Cannot create rollback copy: {e}"))?;
-        storage::replace_file(&replacement, &plan.target)?;
-        if let Err(error) = std::process::Command::new(&plan.target).spawn() {
-            let rollback = storage::replace_file(&backup, &plan.target);
-            return Err(format!(
-                "Could not restart: {error}. Rollback: {rollback:?}"
-            ));
-        }
+        crate::install::replace_and_restart(&plan, &mut crate::install::NativeInstallIo)?;
         let _ = fs::remove_file(&plan.staged);
         let _ = fs::remove_file(plan_path);
         Ok(())
