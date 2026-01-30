@@ -1,5 +1,6 @@
 #[cfg(windows)]
 mod controller;
+pub mod install;
 pub mod model;
 #[cfg(windows)]
 pub mod platform;
