@@ -19,3 +19,12 @@ The intended first asset is **WindowTabs-v0.1.0.exe** for Windows x64, accompani
 
 Compilation and synthetic tests do not verify cross-process desktop behavior. Interactive window grouping, DPI/monitor transitions, focus/Z-order, recovery on a real desktop, and live update installation require the manual checks in `docs/VALIDATION.md`. Elevated, special, modal, hung, and cloaked windows are excluded. Real manager and settings screenshots remain required before publication.
 
+### Fixed during local review
+
+- Inactive-window exit/detachment and exits in another group no longer reveal minimized groups. Failed restorations enter a restoration-only phase so late events cannot regroup windows being restored.
+- Failed exit-journal writes remain retryable, and normal shutdown retries the final journal write. A corrupt settings file no longer blocks access to a valid recovery journal or gets overwritten during recovery.
+- Offscreen restoration now chooses and acknowledges a reachable placement using physical monitor coordinates; previous recovery journals remain compatible.
+- Installation requires successful restoration and uses durable request IDs so coalesced UI events cannot lose installation refusals or reuse stale replies.
+- Portable updates verify the current EXE against the captured old hash, create unique files without overwriting existing sidecars, and validate complete executable headers/sections. Failed new-version launches restore and attempt to restart the previous version, with explicit backup paths on rollback failure.
+- Regression coverage now includes 33 tests. Window operations and installer/process side effects remain simulated; live desktop and updater validation are pending.
+
