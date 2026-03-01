@@ -1,9 +1,12 @@
 #[cfg(windows)]
+mod capture_fixture;
+#[cfg(windows)]
 mod controller;
 pub mod install;
 pub mod model;
 #[cfg(windows)]
 pub mod platform;
+mod presentation;
 pub mod storage;
 #[cfg(windows)]
 pub mod ui;
