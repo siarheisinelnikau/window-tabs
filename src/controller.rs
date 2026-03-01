@@ -134,7 +134,7 @@ impl Controller {
             Command::Refresh => {
                 self.engine.prune()?;
                 self.refresh();
-                "Eligible windows refreshed. Use Ctrl or Shift to select several windows.".into()
+                "Windows refreshed. Select the windows you want to group.".into()
             }
             Command::Sync => {
                 self.synchronize()?;
@@ -408,27 +408,46 @@ pub fn start(store: Store, window: isize, message: u32) -> Result<Worker> {
     let (sender, receiver) = mpsc::sync_channel(32);
     let mailbox = Arc::new(Mutex::new(None));
     let output = mailbox.clone();
-    thread::Builder::new().name("window-management".into()).spawn(move || {
-        let post = |snapshot| {
-            if let Ok(mut output) = output.lock() { *output = Some(snapshot); }
-            unsafe { PostMessageW(window as _, message, 0, 0); }
-        };
-        let mut controller = match Controller::open(store) {
-            Ok(controller) => controller,
-            Err(error) => { post(Snapshot { status:error, ..Default::default() }); return; },
-        };
-        controller.refresh();
-        let initial_status = controller.settings_error.clone().unwrap_or_else(||"Select ordinary resizable windows, enter a group name, then choose Create group.".into());
-        post(controller.snapshot(initial_status.clone(), false));
-        let mut last_status = initial_status;
-        let mut last_install_result = None;
-        for command in receiver {
-            let snapshot=controller.execute(command,&mut last_status,&mut last_install_result);
-            let quit=snapshot.quit;
-            post(snapshot);
-            if quit { break; }
-        }
-    }).map_err(|e| format!("Cannot start window worker: {e}"))?;
+    thread::Builder::new()
+        .name("window-management".into())
+        .spawn(move || {
+            let post = |snapshot| {
+                if let Ok(mut output) = output.lock() {
+                    *output = Some(snapshot);
+                }
+                unsafe {
+                    PostMessageW(window as _, message, 0, 0);
+                }
+            };
+            let mut controller = match Controller::open(store) {
+                Ok(controller) => controller,
+                Err(error) => {
+                    post(Snapshot {
+                        status: error,
+                        ..Default::default()
+                    });
+                    return;
+                }
+            };
+            controller.refresh();
+            let initial_status = controller
+                .settings_error
+                .clone()
+                .unwrap_or_else(|| "Choose New group to bring related windows together.".into());
+            post(controller.snapshot(initial_status.clone(), false));
+            let mut last_status = initial_status;
+            let mut last_install_result = None;
+            for command in receiver {
+                let snapshot =
+                    controller.execute(command, &mut last_status, &mut last_install_result);
+                let quit = snapshot.quit;
+                post(snapshot);
+                if quit {
+                    break;
+                }
+            }
+        })
+        .map_err(|e| format!("Cannot start window worker: {e}"))?;
     Ok(Worker { sender, mailbox })
 }
 
