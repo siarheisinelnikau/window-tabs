@@ -155,6 +155,7 @@ struct App {
     saved_pending: bool,
     preferred_group: Option<GroupId>,
     last_status: String,
+    pending_text: RefCell<HashMap<i32, String>>,
     title_font: HFONT,
     heading_font: HFONT,
     layout_key: Option<(Page, i32, i32, bool, bool, bool)>,
@@ -571,6 +572,7 @@ impl App {
             saved_pending: false,
             preferred_group: None,
             last_status: String::new(),
+            pending_text: RefCell::new(HashMap::new()),
             title_font: null_mut(),
             heading_font: null_mut(),
             layout_key: None,
@@ -927,6 +929,12 @@ impl App {
         }
     }
     fn set(&self, id: i32, text: &str) {
+        if !self.capture
+            && unsafe { IsWindowVisible(self.window) == 0 || IsIconic(self.window) != 0 }
+        {
+            self.pending_text.borrow_mut().insert(id, text.to_owned());
+            return;
+        }
         unsafe {
             let mut current =
                 vec![0u16; (GetWindowTextLengthW(self.controls[&id]) + 1).max(1) as usize];
@@ -1215,10 +1223,17 @@ impl App {
         }
     }
     fn render_manager(&mut self) {
-        if !self.dirty_manager
-            || (!self.capture
-                && unsafe { IsWindowVisible(self.window) == 0 || IsIconic(self.window) != 0 })
+        if !self.capture
+            && unsafe { IsWindowVisible(self.window) == 0 || IsIconic(self.window) != 0 }
         {
+            return;
+        }
+        // Network progress may change while the manager is minimized. Publish only the latest text on restore.
+        let pending = std::mem::take(&mut *self.pending_text.borrow_mut());
+        for (id, text) in pending {
+            self.set(id, &text);
+        }
+        if !self.dirty_manager {
             return;
         }
         self.dirty_manager = false;
