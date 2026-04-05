@@ -1,0 +1,30 @@
+[
+  {
+    "Screen": "groups",
+    "ProcessId": 58948,
+    "ExitCode": 0,
+    "CpuMilliseconds": 46.875,
+    "RenderMilliseconds": 27,
+    "RasterPasses": 1,
+    "Viewport": [
+      820,
+      600
+    ],
+    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
+    "Sha256": "903eb52e1e39bd4f135631136a273edcb84ebcbc291d3a3139a9494c59c2113c"
+  },
+  {
+    "Screen": "settings",
+    "ProcessId": 22040,
+    "ExitCode": 0,
+    "CpuMilliseconds": 46.875,
+    "RenderMilliseconds": 27,
+    "RasterPasses": 1,
+    "Viewport": [
+      820,
+      600
+    ],
+    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
+    "Sha256": "e70db17ae603db2e7ea593f31cca1561ab683886da549b1cdba871f2511511f7"
+  }
+]
