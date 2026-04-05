@@ -2,16 +2,24 @@
 
 ## Session boundaries
 
-Implementation on 2026-10-31 used code-only verification. No application GUI was started, no actual desktop windows were enumerated or manipulated by the application, no screenshots were taken, no update check/download/installer was run, and no remote Git operation or publication was performed. Cargo builds used at most two jobs with a repository-local target directory. Test adapters and filesystem fixtures are synthetic; fixtures stay under `target/test-fixtures` and do not use the real LocalAppData directory.
+Initial implementation and recovery/updater review on 2026-10-31 used code-only verification. During the later interface review, the user explicitly authorized only a hidden, isolated render-save-exit mode. No ordinary GUI session, computer use, actual desktop-window discovery/manipulation, update check/download/installer, or remote Git operation occurred. Cargo builds used at most two jobs with a repository-local target directory. Fixtures and capture data are synthetic; neither tests nor self-capture use real LocalAppData settings.
 
 ## Automated checks
 
-- `cargo test --offline --locked --lib --tests`: 33 tests passed (2 controller, 14 group-state, 9 persistence/PE/release-selection, 8 replacement-transaction tests). Coverage includes preserving minimized/unrelated groups after exit, restoration-only retry behavior, journal-write retry, backward-compatible journals, recovery access with corrupt settings, persistent request IDs across coalesced events, strict executable rejection, unchanged-current-EXE checks, existing-sidecar preservation, successful replacement, launch-failure rollback/restart, and explicit rollback/restart failures. File/process effects of replacement tests use an in-memory adapter; the native installer is never executed.
+- `cargo test --offline --locked --lib --tests`: 35 tests passed (2 controller, 2 presentation, 14 group-state, 9 persistence/PE/release-selection, 8 replacement-transaction tests). Presentation coverage checks minimum/larger layout bounds, pairwise overlap, and unchanged native-list content caching. Existing recovery, journal, update selection, strict executable validation, replacement and rollback regression coverage remains passing. Installer file/process effects use an in-memory adapter; the native installer is never executed.
 - `cargo clippy --offline --locked --all-targets -- -D warnings`: passed. The environment may emit an incremental-cache hard-link warning and copy files instead; no source warnings remained.
 - `cargo fmt --all --check`: passed through `scripts/verify.ps1 -Offline`.
 - `scripts/package.ps1 -Offline`: built the optimized x64 MSVC executable and wrote the versioned asset, SHA-256 manifest, license, and third-party notices. Static PE inspection confirmed x64/PE32+, Windows GUI subsystem, embedded PerMonitorV2/asInvoker manifest, and no external MSVC CRT DLL imports. This is not a GUI smoke test.
 
-The reviewed local package built with Rust 1.96.1 is `dist/v0.1.0/WindowTabs-v0.1.0.exe` (923,648 bytes). Its SHA-256 is `d161b176d2054c1dfad825ceee3b17f90708591cc0912aa399b6e3982f2a17a1`. The checksum identifies this local build; it is not a published or signed release.
+The reviewed local package built with Rust 1.96.1 is `dist/v0.1.0/WindowTabs-v0.1.0.exe` (1,134,080 bytes). Its SHA-256 is `af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b`. The checksum identifies this local build; it is not a published or signed release.
+
+## Static visual review and load-gate scope
+
+After source inspection of the native GDI path, blocking event loop, and capture isolation, nine final captures were produced directly by the packaged EXE: six main states at 900×640, Groups/Settings at 820×600, and an error state at 900×640, all at 96 DPI. Each owned process exited normally with code 0 after one composite raster pass. Recorded render-save times were 22–31 ms and total whole-process CPU times 31.3–46.9 ms (startup included, timer-resolution limited). These are finite-capture observations, not idle utilization or frame-latency measurements.
+
+The actual PNGs were opened and inspected. Shared layout, typography, selection, disabled buttons, action hierarchy, footer wrapping, and minimum-size clipping were reviewed. Metadata and executable/image hashes are under `docs/screenshots`, including `capture-summary.json` in each capture directory. The pictures show real native client controls with synthetic data, not unrelated application windows, native menus, or the OS title bar.
+
+The normal runtime rendering/load gate remains incomplete: visible/hidden idle CPU, raster/present counts, GPU/waits, keyboard interaction, DPI transitions, and restore cycles were not measured. Source-level hidden-view deferral and content/geometry caches were added; no performance improvement is claimed without those measurements. Details and reproduction commands are in [DESIGN.md](DESIGN.md).
 
 ## Required manual pass before release
 
@@ -35,6 +43,6 @@ Use only disposable application documents and settings for these checks. The ite
 | Update installation | Against an authorized published test release, click Download and install. Observe progress, verify group restoration before exit, replacement, one restarted process, installed version, retained settings, backup, and rollback on launch failure. |
 | Update retry/races | Refuse installation with pending recovery, then resolve and retry while events arrive. The old refusal must not cancel the retry. Change the installed file before replacement or precreate sidecars; preserve those files. Confirm actual backup/restart error messages against disposable copies. |
 | Lifecycle/performance | Close the manager with groups active; verify actual placements and process exit. Launch twice; no duplicate controller appears. Measure idle visible/minimized CPU, event bursts and responsiveness in the packaged release. |
-| Screenshots | Capture real manager, tab strip with grouped windows, and Settings / Updates. Add working images and English alt text to README. |
+| Screenshots | Manager, Settings, picker, empty/saved/recovery/error and minimum-size native client self-captures are complete and linked in README. A screenshot of the tab strip with real grouped desktop windows remains pending. |
 
 The canonical GitHub repository/release is planned and has not been created by this session. Publication, actual network error paths, and end-to-end updater execution remain unverified.

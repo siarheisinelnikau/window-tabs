@@ -1,0 +1,86 @@
+[
+  {
+    "Screen": "groups",
+    "ProcessId": 51820,
+    "ExitCode": 0,
+    "CpuMilliseconds": 46.875,
+    "RenderMilliseconds": 31,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
+    "Sha256": "d7cfc4b68a3c5a6b3054f4e3ab53494d77a648420f14996a35bf70eb0e1e97df"
+  },
+  {
+    "Screen": "settings",
+    "ProcessId": 50584,
+    "ExitCode": 0,
+    "CpuMilliseconds": 46.875,
+    "RenderMilliseconds": 30,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
+    "Sha256": "d3f5a171bd78f010e4273f635b4c4b0e1ecb3d7ef8259df091328be14aa1a5cb"
+  },
+  {
+    "Screen": "picker",
+    "ProcessId": 56748,
+    "ExitCode": 0,
+    "CpuMilliseconds": 31.25,
+    "RenderMilliseconds": 24,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
+    "Sha256": "5057d402416aea97a6b6bc099a143eb9e6865b06101458668070966cbb222b29"
+  },
+  {
+    "Screen": "empty",
+    "ProcessId": 57244,
+    "ExitCode": 0,
+    "CpuMilliseconds": 46.875,
+    "RenderMilliseconds": 22,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
+    "Sha256": "344b5a61174c46315a2574161144ae886409e4020ece6e50264afb31f812da30"
+  },
+  {
+    "Screen": "saved",
+    "ProcessId": 44152,
+    "ExitCode": 0,
+    "CpuMilliseconds": 31.25,
+    "RenderMilliseconds": 26,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
+    "Sha256": "3d2a268be004ba7033df2712cac75c7ce4d7004a308a4a0abe0370ba1aa86ff8"
+  },
+  {
+    "Screen": "recovery",
+    "ProcessId": 24204,
+    "ExitCode": 0,
+    "CpuMilliseconds": 46.875,
+    "RenderMilliseconds": 25,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
+    "Sha256": "f419966301538f5efb4765b979f7e54ff333f2130a3c54f3861f8cc18f96fca4"
+  }
+]

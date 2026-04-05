@@ -1,0 +1,14 @@
+{
+  "backend": "Win32 native controls / GDI DIB / WM_PRINT",
+  "dpi": 96,
+  "elapsed_ms": 29,
+  "executable": "E:\\work\\github\\window-tabs\\dist\\v0.1.0\\WindowTabs-v0.1.0.exe",
+  "native_controls": 15,
+  "render_passes": 1,
+  "scope": "client area; synthetic non-sensitive data; no visible windows",
+  "screen": "error",
+  "viewport": [
+    900,
+    640
+  ]
+}

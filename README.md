@@ -4,6 +4,8 @@ WindowTabs groups existing, ordinary Windows application windows behind a separa
 
 **Version 0.1.0 is an unpublished developer preview.** The Windows source builds and synthetic tests are available; interactive desktop compatibility has not yet been validated. No repository or release was published during implementation.
 
+The manager separates **Groups**, **Saved groups**, and **Settings**. Creating a group opens a focused window picker; everyday switching stays in the small tab strip. [Design and rendering notes](docs/DESIGN.md) explain the workflow and verification scope.
+
 WindowTabs is an independent MIT-licensed implementation. The [Groupy product](https://www.stardock.com/products/groupy/) inspired the user task. WindowTabs has no affiliation with Stardock and uses no competitor code, branding, or assets.
 
 ## Implemented capabilities
@@ -14,7 +16,7 @@ WindowTabs is an independent MIT-licensed implementation. The [Groupy product](h
 - Follow active-window move/resize and process/window exit through process-scoped, out-of-context WinEvents. No DLL injection, reparenting, target style changes, global keyboard hooks, service, or driver.
 - Reserve space for the tab strip inside the active monitor's work area, including negative monitor coordinates and per-monitor DPI. Minimized groups can be restored from the manager.
 - Save ordered group definitions and explicitly restore them against already-open windows. Matching uses executable path, window class, and exact title; missing or ambiguous windows produce an error instead of guessing or launching applications.
-- Write a recovery journal before manipulating any window. The next launch offers **Recover previous session** after an interrupted session; uncertain identities and unsuccessful restorations retain their recovery records.
+- Write a recovery journal before manipulating any window. The next launch offers **Recover windows** after an interrupted session; uncertain identities and unsuccessful restorations retain their recovery records.
 - Show installed version, manual **Check for updates**, a persistent startup-check opt-out, and user-initiated **Download and install** with progress, SHA-256 verification, backup, executable replacement, and restart code.
 
 ## Requirements and build
@@ -33,18 +35,18 @@ Remove `-Offline` when dependencies are not already cached. Cargo is limited to 
 
 ## Use after interactive validation
 
-1. Start WindowTabs, open the desired application windows, and choose **Refresh windows**. The list intentionally omits ineligible windows.
+1. Start WindowTabs, open the desired application windows, and choose **New group**. Use **Refresh windows** inside the picker when the open windows change. The list intentionally omits ineligible windows.
 2. Select at least two windows, enter a name, and choose **Create group**. The first selected entry defines the initial monitor and bounds. Selection follows the list's title order.
 3. Click a tab, use its native arrow navigation, or double-click a member in the manager. The strip's **…** menu includes previous/next, move left/right, detach, show manager, and close group. Ctrl+Tab / Ctrl+Shift+Tab work while the manager or strip has focus; they do not intercept input in other applications.
 4. Move or resize the active application's title bar/borders to reposition the group. Bounds are constrained to one monitor's work area with space reserved above for the strip. Maximizing an active member expands the group into that work area; it becomes a restored window so the strip has room. Minimizing hides the strip; select a member and **Switch to tab** to restore it.
-5. Use **Save group** to store its current window titles and order. Saving a name already present replaces that definition. **Restore saved** requires the same applications and exact titles to be open; it does not reopen documents or run programs.
-6. **Detach**, **Close group**, or closing the manager restores original placements and show states. An original minimized window returns minimized. The strip's **×** closes the group, not an application. A failed restoration puts the group into **recovery required** mode: its strip is hidden, automatic regrouping/switching stops, and its journal remains for **Close group** or **Detach** retry. Normal shutdown waits for restoration and its journal write to succeed, or for the target to exit. Exiting an inactive member does not unminimize its group or affect another group.
+5. **Group actions** contains **Add windows**, **Save group**, and **Ungroup and restore windows**. Save stores current titles and order; a name already present replaces that definition. On **Saved groups**, select a definition and choose **Restore saved**. It requires the same applications and exact titles to be open and does not reopen documents or run programs. A successful create/restore selects the resulting group.
+6. **Detach**, **Ungroup and restore windows**, or closing the manager restores original placements and show states. An original minimized window returns minimized. The strip's **×** closes the group, not an application. A failed restoration puts the group into **recovery required** mode: its strip is hidden, automatic regrouping/switching stops, and its journal remains for retry through Group actions or Detach. Normal shutdown waits for restoration and its journal write to succeed, or for the target to exit. Exiting an inactive member does not unminimize its group or affect another group.
 
 The manager stays on the taskbar; there is no tray mode. A second instance reports the existing instance instead of taking control of its groups.
 
 ## Settings, privacy, and updates
 
-Own data lives in `%LOCALAPPDATA%\WindowTabs\settings.json` and `recovery.json`. Settings contain saved names, executable paths, window classes, and titles. Recovery also includes process creation times, HWNDs, placements, and visibility. These local files are not encrypted; no document content or screenshots are captured or uploaded. Do not remove a nonempty recovery journal before recovering affected windows.
+Own data lives in `%LOCALAPPDATA%\WindowTabs\settings.json` and `recovery.json`. Settings contain saved names, executable paths, window classes, and titles. Recovery also includes process creation times, HWNDs, placements, and visibility. These local files are not encrypted; normal operation does not capture documents or screenshots and uploads no window data. The developer-only capture mode below renders synthetic fixtures into a requested local file. Do not remove a nonempty recovery journal before recovering affected windows.
 
 A valid recovery journal remains usable if settings are corrupt or from an unsupported schema. WindowTabs preserves the settings file and enters a recovery-only mode with startup network checks disabled; recover windows, then repair settings and restart. Older journals without saved physical monitor coordinates remain readable. When the original monitor is gone, recovery chooses reachable normal bounds and waits for that placement instead of accepting an unrelated visible window state.
 
@@ -64,5 +66,19 @@ Local noninteractive results and the remaining manual matrix are in [docs/VALIDA
 
 ## Screenshots
 
-**Real application and settings screenshots are pending.** The implementation session explicitly prohibited GUI launches, desktop control, and screen capture. No images were fabricated and no broken screenshot placeholders are included. Capture actual manager, grouped windows/tab strip, and Settings / Updates images after the manual validation pass and embed them here before a public release.
+These are real application-generated client-area images from the packaged EXE, using the same native Win32 controls and GDI rendering as normal operation. The window names are synthetic fixtures. No visible windows, user applications/settings, screen capture, or computer use were involved. They establish static layout, not successful grouping on a real desktop.
+
+![Native WindowTabs manager with a synthetic populated group, 900 by 640 pixels at 96 DPI](docs/screenshots/groups.png)
+
+![WindowTabs Settings and Updates page, 900 by 640 pixels at 96 DPI](docs/screenshots/settings.png)
+
+Additional reviewed states: [window picker](docs/screenshots/picker.png), [empty](docs/screenshots/empty.png), [saved groups](docs/screenshots/saved.png), [recovery](docs/screenshots/recovery.png), [error](docs/screenshots/errors/error.png), and the [minimum-size manager](docs/screenshots/minimum/groups.png).
+
+To reproduce the isolated render-save-exit diagnostic into a fresh output directory:
+
+```powershell
+.\scripts\capture-ui.ps1 -Executable .\dist\v0.1.0\WindowTabs-v0.1.0.exe -OutputDirectory .\target\new-ui-captures
+```
+
+The script imposes a 20-second process timeout; each invocation renders one composite image and exits. It never activates an existing instance or starts discovery, event hooks, update requests, or persistence. Captures of actual grouped desktop windows/tab strips and interactive keyboard/focus/DPI testing remain pending.
 

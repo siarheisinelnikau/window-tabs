@@ -26,5 +26,13 @@ Compilation and synthetic tests do not verify cross-process desktop behavior. In
 - Offscreen restoration now chooses and acknowledges a reachable placement using physical monitor coordinates; previous recovery journals remain compatible.
 - Installation requires successful restoration and uses durable request IDs so coalesced UI events cannot lose installation refusals or reuse stale replies.
 - Portable updates verify the current EXE against the captured old hash, create unique files without overwriting existing sidecars, and validate complete executable headers/sections. Failed new-version launches restore and attempt to restart the previous version, with explicit backup paths on rollback failure.
-- Regression coverage now includes 33 tests. Window operations and installer/process side effects remain simulated; live desktop and updater validation are pending.
+- Recovery/updater review expanded coverage to 33 tests before the interface changes below. Window operations and installer/process side effects remain simulated; live desktop and updater validation are pending.
+
+### Interface improvements
+
+- Split the manager into Groups, Saved groups, and Settings, with a focused New group/Add windows picker, selection prerequisites, useful empty/recovery states, and native primary actions.
+- Applied shared typography, spacing and a light slate palette while retaining native keyboard/accessibility controls and high-contrast system colors. Kept restore-and-exit on close; no unverified hide-to-tray lifecycle was introduced.
+- Avoided rebuilding unchanged lists, updating hidden/minimized manager views, or relaying out hidden/unchanged tab strips. Actual idle/hidden performance remains unmeasured.
+- Added an isolated developer self-capture mode that renders native client controls directly to PNG and exits without visible windows, user data, window discovery or network requests. Nine final images were statically reviewed, including Settings and minimum-size/error states.
+- Added two presentation regressions for 35 passing tests, and updated release packaging/notices for PNG encoding. Interactive window grouping, input, focus, DPI transitions and live updater validation remain pending.
 
