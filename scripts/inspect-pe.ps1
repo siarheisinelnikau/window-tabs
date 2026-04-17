@@ -27,6 +27,14 @@ function Convert-TaskRva([uint32]$Rva) {
     throw 'PE virtual address is outside the section table.'
 }
 $taskImportRva = [BitConverter]::ToUInt32($taskBytes, $taskPe + 24 + 112 + 8)
+$taskResourceRva = [BitConverter]::ToUInt32($taskBytes, $taskPe + 24 + 112 + 16)
+$taskResourceOffset = Convert-TaskRva $taskResourceRva
+$taskResourceCount = [BitConverter]::ToUInt16($taskBytes, $taskResourceOffset + 12) + [BitConverter]::ToUInt16($taskBytes, $taskResourceOffset + 14)
+$taskResourceTypes = @()
+for ($taskIndex = 0; $taskIndex -lt $taskResourceCount; $taskIndex++) {
+    $taskResourceTypes += [BitConverter]::ToUInt32($taskBytes, $taskResourceOffset + 16 + 8 * $taskIndex)
+}
+if (3 -notin $taskResourceTypes -or 14 -notin $taskResourceTypes) { throw 'Expected embedded application icon and icon group resources.' }
 $taskImportOffset = Convert-TaskRva $taskImportRva
 $taskImports = @()
 for ($taskIndex = 0; $taskIndex -lt 128; $taskIndex++) {
@@ -40,5 +48,5 @@ for ($taskIndex = 0; $taskIndex -lt 128; $taskIndex++) {
     $taskImports += [Text.Encoding]::ASCII.GetString($taskBytes, $taskNameOffset, $taskEnd - $taskNameOffset)
 }
 if ($taskImports | Where-Object { $_ -match '^(vcruntime|msvcp|ucrtbase|api-ms-win-crt-)' }) { throw 'An external MSVC runtime DLL was imported.' }
-[pscustomobject]@{Path = [IO.Path]::GetFullPath($Path); Architecture = 'x64'; Subsystem = 'Windows GUI'; Bytes = $taskBytes.Length; Manifest = 'PerMonitorV2 / asInvoker'; Imports = ($taskImports -join ', '); CRT = 'No external MSVC runtime DLL imports'}
+[pscustomobject]@{Path = [IO.Path]::GetFullPath($Path); Architecture = 'x64'; Subsystem = 'Windows GUI'; Bytes = $taskBytes.Length; Manifest = 'PerMonitorV2 / asInvoker'; Icon = 'Embedded application icon and icon group'; Imports = ($taskImports -join ', '); CRT = 'No external MSVC runtime DLL imports'}
 

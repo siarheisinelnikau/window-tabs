@@ -23,7 +23,7 @@ use windows_sys::{
     Win32::{
         Foundation::*,
         Graphics::Gdi::*,
-        System::LibraryLoader::*,
+        System::{LibraryLoader::*, SystemServices::SS_OWNERDRAW},
         UI::{
             Accessibility::*, Controls::*, HiDpi::*, Input::KeyboardAndMouse::*,
             WindowsAndMessaging::*,
@@ -31,6 +31,8 @@ use windows_sys::{
     },
     core::w,
 };
+#[path = "ui_art.rs"]
+mod art;
 
 const MAIN_CLASS: *const u16 = w!("WindowTabs.Manager.v1");
 const STRIP_CLASS: *const u16 = w!("WindowTabs.Strip.v1");
@@ -51,6 +53,12 @@ struct Palette {
     text: COLORREF,
     secondary: COLORREF,
     border: COLORREF,
+    accent: COLORREF,
+    accent_down: COLORREF,
+    on_accent: COLORREF,
+    selection: COLORREF,
+    disabled: COLORREF,
+    high_contrast: bool,
 }
 fn palette() -> Palette {
     unsafe {
@@ -71,14 +79,26 @@ fn palette() -> Palette {
                 text: GetSysColor(COLOR_WINDOWTEXT),
                 secondary: GetSysColor(COLOR_WINDOWTEXT),
                 border: GetSysColor(COLOR_WINDOWTEXT),
+                accent: GetSysColor(COLOR_HIGHLIGHT),
+                accent_down: GetSysColor(COLOR_HIGHLIGHT),
+                on_accent: GetSysColor(COLOR_HIGHLIGHTTEXT),
+                selection: GetSysColor(COLOR_HIGHLIGHT),
+                disabled: GetSysColor(COLOR_WINDOW),
+                high_contrast: true,
             }
         } else {
             Palette {
-                background: 0x00fcf9f7,
+                background: art::rgb(248, 247, 252),
                 surface: 0x00ffffff,
-                text: 0x003b2417,
-                secondary: 0x0075604e,
-                border: 0x00e9e1d9,
+                text: art::rgb(38, 36, 58),
+                secondary: art::rgb(105, 102, 124),
+                border: art::rgb(228, 224, 240),
+                accent: art::rgb(99, 84, 211),
+                accent_down: art::rgb(78, 64, 183),
+                on_accent: art::rgb(255, 255, 255),
+                selection: art::rgb(237, 233, 253),
+                disabled: art::rgb(238, 237, 245),
+                high_contrast: false,
             }
         }
     }
@@ -92,6 +112,27 @@ fn paint_background(window: HWND, dc: HDC) {
         FillRect(dc, &client, brush);
         DeleteObject(brush);
         let dpi = GetDpiForWindow(window).max(96) as i32;
+        art::brand(dc, 24 * dpi / 96, 24 * dpi / 96, 40 * dpi / 96);
+        // Read only our retained child controls; drawing never borrows App state.
+        for id in [ID_GROUPS, ID_MEMBERS, ID_WINDOWS, ID_SAVED, ID_NAME] {
+            let child = GetDlgItem(window, id);
+            if !child.is_null() && GetWindowLongPtrW(child, GWL_STYLE) as u32 & WS_VISIBLE != 0 {
+                let mut bounds = RECT::default();
+                GetWindowRect(child, &mut bounds);
+                MapWindowPoints(
+                    null_mut(),
+                    window,
+                    &mut bounds as *mut RECT as *mut POINT,
+                    2,
+                );
+                if id == ID_NAME {
+                    InflateRect(&mut bounds, 10 * dpi / 96, 8 * dpi / 96);
+                } else {
+                    InflateRect(&mut bounds, 6 * dpi / 96, 6 * dpi / 96);
+                }
+                art::rounded(dc, bounds, theme.surface, theme.border, 12 * dpi / 96);
+            }
+        }
         let pen = CreatePen(PS_SOLID, 1, theme.border);
         let old = SelectObject(dc, pen);
         for y in [138 * dpi / 96, client.bottom - 62 * dpi / 96] {
@@ -158,6 +199,7 @@ struct App {
     pending_text: RefCell<HashMap<i32, String>>,
     title_font: HFONT,
     heading_font: HFONT,
+    detail_font: HFONT,
     layout_key: Option<(Page, i32, i32, bool, bool, bool)>,
 }
 
@@ -253,6 +295,13 @@ pub fn capture() -> Result<()> {
         app.page = page;
         app.render_manager();
         app.layout();
+        // Exercise a data refresh with the layout cache already settled. Hidden
+        // list controls must remain hidden when their retained content changes.
+        for id in [ID_WINDOWS, ID_GROUPS, ID_MEMBERS, ID_SAVED] {
+            app.list_cache.invalidate(id);
+        }
+        app.dirty_manager = true;
+        app.render_manager();
         if screen == "picker" || screen == "error" {
             for index in [0, 1] {
                 SendMessageW(app.controls[&ID_WINDOWS], LB_SETSEL, 1, index);
@@ -272,6 +321,15 @@ pub fn capture() -> Result<()> {
             !app.snapshot.settings.templates.is_empty(),
             app.snapshot.recovery > 0,
         );
+        for (&id, &control) in &app.controls {
+            let expected = placements.iter().any(|p| p.id == id);
+            let shown = GetWindowLongPtrW(control, GWL_STYLE) as u32 & WS_VISIBLE != 0;
+            if shown != expected {
+                return Err(format!(
+                    "Control {id} changed visibility during a retained-content refresh."
+                ));
+            }
+        }
         APP.with(|state| *state.borrow_mut() = Some(app));
         let bitmap = CaptureBitmap::new(width, height)?;
         paint_background(window, bitmap.dc);
@@ -280,9 +338,23 @@ pub fn capture() -> Result<()> {
                 return Err("Capture exceeded the ten-second rendering deadline.".into());
             }
             let control = APP.with(|state| state.borrow().as_ref().unwrap().controls[&p.id]);
+            let mut bounds = RECT::default();
+            GetWindowRect(control, &mut bounds);
+            MapWindowPoints(
+                null_mut(),
+                window,
+                &mut bounds as *mut RECT as *mut POINT,
+                2,
+            );
             let saved = SaveDC(bitmap.dc);
-            SetViewportOrgEx(bitmap.dc, p.x, p.y, null_mut());
-            IntersectClipRect(bitmap.dc, 0, 0, p.width, p.height);
+            SetViewportOrgEx(bitmap.dc, bounds.left, bounds.top, null_mut());
+            IntersectClipRect(
+                bitmap.dc,
+                0,
+                0,
+                bounds.right - bounds.left,
+                bounds.bottom - bounds.top,
+            );
             let mut result = 0;
             let painted = SendMessageTimeoutW(
                 control,
@@ -429,7 +501,7 @@ pub fn run() -> Result<()> {
                 hInstance: instance,
                 lpszClassName: name,
                 hCursor: LoadCursorW(null_mut(), IDC_ARROW),
-                hIcon: LoadIconW(null_mut(), IDI_APPLICATION),
+                hIcon: LoadIconW(instance, w!("WINDOWTABS_ICON")),
                 hbrBackground: (COLOR_BTNFACE + 1) as usize as HBRUSH,
                 ..zeroed()
             };
@@ -575,6 +647,7 @@ impl App {
             pending_text: RefCell::new(HashMap::new()),
             title_font: null_mut(),
             heading_font: null_mut(),
+            detail_font: null_mut(),
             layout_key: None,
         };
         unsafe {
@@ -595,6 +668,7 @@ impl App {
                 ),
                 (ID_VERSION, ""),
                 (ID_PICK_COUNT, "0 windows selected"),
+                (ID_EMPTY_ART, "Grouped windows illustration"),
             ] {
                 app.control(id, "STATIC", text, 0)?;
             }
@@ -634,16 +708,16 @@ impl App {
                 (ID_NAV_GROUPS, "Groups"),
                 (ID_NAV_SAVED, "Saved groups"),
                 (ID_NAV_SETTINGS, "Settings"),
-                (ID_NEW, "+ New group"),
+                (ID_NEW, "New group"),
                 (ID_CANCEL, "Back"),
                 (ID_MORE, "Group actions…"),
                 (ID_REFRESH, "Refresh windows"),
                 (ID_CREATE, "Create group"),
                 (ID_ADD, "Add to group"),
                 (ID_RENAME, "Rename"),
-                (ID_SWITCH, "Switch to tab"),
-                (ID_LEFT, "Move left"),
-                (ID_RIGHT, "Move right"),
+                (ID_SWITCH, "Switch"),
+                (ID_LEFT, "Left"),
+                (ID_RIGHT, "Right"),
                 (ID_DETACH, "Detach"),
                 (ID_CLOSE, "Close group"),
                 (ID_SAVE, "Save group"),
@@ -687,6 +761,32 @@ impl App {
         Ok(app)
     }
     unsafe fn control(&mut self, id: i32, class: &str, text: &str, style: u32) -> Result<()> {
+        let mut style = style;
+        if class == "BUTTON" && style & BS_TYPEMASK as u32 != BS_AUTOCHECKBOX as u32 {
+            style = (style & !(BS_TYPEMASK as u32)) | BS_OWNERDRAW as u32;
+        }
+        if class == "LISTBOX" {
+            style = (style & !(WS_HSCROLL | WS_BORDER))
+                | LBS_OWNERDRAWFIXED as u32
+                | LBS_HASSTRINGS as u32;
+        }
+        if class == "EDIT" {
+            style &= !WS_BORDER;
+        }
+        if class == "STATIC"
+            && [
+                ID_LABEL_GROUPS,
+                ID_LABEL_MEMBERS,
+                ID_LABEL_WINDOWS,
+                ID_LABEL_SAVED,
+                ID_LABEL_SETTINGS,
+                ID_VERSION,
+                ID_EMPTY_ART,
+            ]
+            .contains(&id)
+        {
+            style |= SS_OWNERDRAW;
+        }
         let control = unsafe {
             CreateWindowExW(
                 0,
@@ -744,14 +844,20 @@ impl App {
         let placements = presentation::layout(self.page, width, height, key.3, key.4, key.5);
         for (&id, &control) in &self.controls {
             if let Some(p) = placements.iter().find(|p| p.id == id) {
+                // The native edit sits inside a padded, parent-painted field.
+                let (x, y, width, height) = if id == ID_NAME {
+                    (p.x + 10, p.y + 8, p.width - 20, p.height - 16)
+                } else {
+                    (p.x, p.y, p.width, p.height)
+                };
                 unsafe {
                     SetWindowPos(
                         control,
                         null_mut(),
-                        self.scale(p.x),
-                        self.scale(p.y),
-                        self.scale(p.width),
-                        self.scale(p.height),
+                        self.scale(x),
+                        self.scale(y),
+                        self.scale(width),
+                        self.scale(height),
                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW,
                     );
                 }
@@ -794,16 +900,11 @@ impl App {
             (ID_NAV_SETTINGS, Page::Settings),
         ] {
             unsafe {
-                SendMessageW(
-                    self.controls[&id],
-                    BM_SETSTYLE,
-                    if self.page == page {
-                        BS_DEFPUSHBUTTON
-                    } else {
-                        BS_PUSHBUTTON
-                    } as usize,
-                    1,
-                );
+                let active = isize::from(self.page == page);
+                if GetWindowLongPtrW(self.controls[&id], GWLP_USERDATA) != active {
+                    SetWindowLongPtrW(self.controls[&id], GWLP_USERDATA, active);
+                    InvalidateRect(self.controls[&id], null(), 0);
+                }
             }
         }
         unsafe {
@@ -866,6 +967,37 @@ impl App {
                     DeleteObject(self.font);
                 }
                 self.font = new;
+                let detail = CreateFontW(
+                    -self.scale(12),
+                    0,
+                    0,
+                    0,
+                    FW_NORMAL as i32,
+                    0,
+                    0,
+                    0,
+                    DEFAULT_CHARSET as u32,
+                    0,
+                    0,
+                    CLEARTYPE_QUALITY as u32,
+                    0,
+                    w!("Segoe UI"),
+                );
+                if !detail.is_null() {
+                    art::set_detail_font(detail);
+                    if !self.detail_font.is_null() {
+                        DeleteObject(self.detail_font);
+                    }
+                    self.detail_font = detail;
+                }
+                for id in [ID_GROUPS, ID_MEMBERS, ID_WINDOWS, ID_SAVED] {
+                    SendMessageW(
+                        self.controls[&id],
+                        LB_SETITEMHEIGHT,
+                        0,
+                        self.scale(54) as isize,
+                    );
+                }
                 for font in [&mut self.title_font, &mut self.heading_font] {
                     if !font.is_null() {
                         DeleteObject(*font);
@@ -1032,13 +1164,7 @@ impl App {
                 .members
                 .iter()
                 .enumerate()
-                .map(|(i, w)| {
-                    format!(
-                        "{}{}",
-                        if i == group.active { "●  " } else { "    " },
-                        w.title
-                    )
-                })
+                .map(|(i, w)| window_row(w, i == group.active))
                 .collect(),
         );
         self.member_ids = group.members.iter().map(|w| w.identity.clone()).collect();
@@ -1246,16 +1372,7 @@ impl App {
             .snapshot
             .windows
             .iter()
-            .map(|w| {
-                format!(
-                    "{}   [{}]",
-                    w.title,
-                    std::path::Path::new(&w.executable)
-                        .file_name()
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                )
-            })
+            .map(|w| window_row(w, false))
             .collect();
         let new_ids: Vec<_> = self
             .snapshot
@@ -1287,17 +1404,16 @@ impl App {
                 .groups
                 .iter()
                 .map(|g| {
-                    format!(
-                        "{}  ·  {}{}",
-                        g.name,
+                    group_row(
+                        &g.name,
                         g.members.len(),
                         if g.restoring {
-                            " · Recover"
+                            "Needs recovery"
                         } else if !g.shown {
-                            " · Hidden"
+                            "Minimized"
                         } else {
                             ""
-                        }
+                        },
                     )
                 })
                 .collect(),
@@ -1327,7 +1443,7 @@ impl App {
                 .settings
                 .templates
                 .iter()
-                .map(|t| format!("{}  ·  {} windows", t.name, t.members.len()))
+                .map(|t| group_row(&t.name, t.members.len(), "Saved"))
                 .collect(),
         );
         if let Some(index) = saved
@@ -1881,7 +1997,12 @@ impl Drop for App {
                     DeleteObject(strip.font);
                 }
             }
-            for object in [self.font, self.title_font, self.heading_font] {
+            for object in [
+                self.font,
+                self.title_font,
+                self.heading_font,
+                self.detail_font,
+            ] {
                 if !object.is_null() {
                     DeleteObject(object);
                 }
@@ -1896,34 +2017,21 @@ fn selected(list: HWND) -> Option<usize> {
 }
 fn list_fill(list: HWND, items: impl Iterator<Item = String>) {
     unsafe {
-        SendMessageW(list, WM_SETREDRAW, 0, 0);
+        // DefWindowProc adds WS_VISIBLE when redraw is reenabled. Never enable
+        // redraw on an off-page list, or a background snapshot can reveal it.
+        let shown = GetWindowLongPtrW(list, GWL_STYLE) as u32 & WS_VISIBLE != 0;
+        if shown {
+            SendMessageW(list, WM_SETREDRAW, 0, 0);
+        }
         SendMessageW(list, LB_RESETCONTENT, 0, 0);
-        let dc = GetDC(list);
-        let font = SendMessageW(list, WM_GETFONT, 0, 0) as HFONT;
-        let old = if !dc.is_null() && !font.is_null() {
-            SelectObject(dc, font)
-        } else {
-            null_mut()
-        };
-        let mut extent = 0;
         for item in items {
             let text = wide(&item);
-            let mut size = SIZE::default();
-            if !dc.is_null() {
-                GetTextExtentPoint32W(dc, text.as_ptr(), (text.len() - 1) as i32, &mut size);
-                extent = extent.max(size.cx + 24);
-            }
             SendMessageW(list, LB_ADDSTRING, 0, text.as_ptr() as isize);
         }
-        if !old.is_null() {
-            SelectObject(dc, old);
+        if shown {
+            SendMessageW(list, WM_SETREDRAW, 1, 0);
+            InvalidateRect(list, null(), 1);
         }
-        if !dc.is_null() {
-            ReleaseDC(list, dc);
-        }
-        SendMessageW(list, LB_SETHORIZONTALEXTENT, extent as usize, 0);
-        SendMessageW(list, WM_SETREDRAW, 1, 0);
-        InvalidateRect(list, null(), 1);
     }
 }
 fn post_update(mailbox: &Arc<Mutex<Option<UpdateNotice>>>, window: isize, notice: UpdateNotice) {
@@ -1968,6 +2076,16 @@ unsafe extern "system" fn main_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
+    if message == WM_DRAWITEM {
+        return unsafe { art::draw(lparam as *const DRAWITEMSTRUCT) };
+    }
+    if message == WM_MEASUREITEM {
+        let measure = unsafe { &mut *(lparam as *mut MEASUREITEMSTRUCT) };
+        if measure.CtlType == ODT_LISTBOX {
+            measure.itemHeight = 54 * unsafe { GetDpiForWindow(window) }.max(96) / 96;
+            return 1;
+        }
+    }
     // Control painting can reenter while a view is being updated. Keep it independent of App's mutable borrow.
     if message == WM_CTLCOLORSTATIC
         || message == WM_CTLCOLOREDIT

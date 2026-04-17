@@ -53,6 +53,78 @@ pub const ID_EMPTY: i32 = 159;
 pub const ID_EMPTY_HELP: i32 = 160;
 pub const ID_VERSION: i32 = 161;
 pub const ID_PICK_COUNT: i32 = 162;
+pub const ID_EMPTY_ART: i32 = 163;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WindowKind {
+    Browser,
+    Files,
+    Editor,
+    Terminal,
+    Calendar,
+    Application,
+}
+pub fn window_kind(executable: &str) -> WindowKind {
+    let name = executable.to_ascii_lowercase();
+    if ["chrome", "firefox", "msedge", "brave", "browser"]
+        .iter()
+        .any(|s| name.contains(s))
+    {
+        WindowKind::Browser
+    } else if name.contains("explorer") {
+        WindowKind::Files
+    } else if ["terminal", "powershell", "cmd", "console"]
+        .iter()
+        .any(|s| name.contains(s))
+    {
+        WindowKind::Terminal
+    } else if name.contains("calendar") {
+        WindowKind::Calendar
+    } else if ["editor", "notepad", "code", "sublime"]
+        .iter()
+        .any(|s| name.contains(s))
+    {
+        WindowKind::Editor
+    } else {
+        WindowKind::Application
+    }
+}
+pub fn clean_row_title(title: &str) -> String {
+    title
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect()
+}
+pub fn window_row(window: &crate::model::WindowInfo, active: bool) -> String {
+    let executable = window
+        .executable
+        .rsplit(['\\', '/'])
+        .next()
+        .unwrap_or("Application");
+    let app = executable
+        .rsplit_once('.')
+        .map(|(name, _)| name)
+        .unwrap_or(executable);
+    format!(
+        "{}\n{}{}",
+        clean_row_title(&window.title),
+        clean_row_title(app),
+        if active { " · Active window" } else { "" }
+    )
+}
+pub fn group_row(name: &str, count: usize, state: &str) -> String {
+    format!(
+        "{}\n{} {}{}",
+        clean_row_title(name),
+        count,
+        if count == 1 { "window" } else { "windows" },
+        if state.is_empty() {
+            String::new()
+        } else {
+            format!(" · {state}")
+        }
+    )
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Placement {
@@ -85,11 +157,11 @@ pub fn layout(
     let m = 24;
     let full = width - 2 * m;
     let action = height - 98;
-    put(ID_BRAND, m, 20, 320, 34);
-    put(ID_TAGLINE, m, 58, full - 190, 24);
-    put(ID_NAV_GROUPS, m, 94, 102, 34);
-    put(ID_NAV_SAVED, m + 110, 94, 126, 34);
-    put(ID_NAV_SETTINGS, m + 244, 94, 102, 34);
+    put(ID_BRAND, m + 56, 20, 320, 34);
+    put(ID_TAGLINE, m + 56, 58, full - 246, 24);
+    put(ID_NAV_GROUPS, m, 94, 112, 38);
+    put(ID_NAV_SAVED, m + 120, 94, 152, 38);
+    put(ID_NAV_SETTINGS, m + 280, 94, 120, 38);
     if recovery || (!matches!(page, Page::Picker(_)) && (page != Page::Groups || has_groups)) {
         put(
             if recovery { ID_RECOVER } else { ID_NEW },
@@ -110,22 +182,23 @@ pub fn layout(
                 put(ID_GROUPS, m, 182, left, height - 294);
                 put(ID_MORE, m, action, left, 34);
                 put(ID_LABEL_MEMBERS, right, 150, content, 24);
-                put(ID_NAME, right, 182, content - 106, 34);
-                put(ID_RENAME, width - m - 98, 182, 98, 34);
+                put(ID_NAME, right, 182, content - 132, 34);
+                put(ID_RENAME, width - m - 124, 182, 124, 34);
                 put(ID_MEMBERS, right, 230, content, height - 342);
                 for (id, x, w) in [
                     (ID_SWITCH, 0, 112),
                     (ID_LEFT, 120, 88),
                     (ID_RIGHT, 216, 88),
-                    (ID_DETACH, 312, 90),
+                    (ID_DETACH, 312, 116),
                 ] {
                     put(id, right + x, action, w, 34);
                 }
             } else {
-                put(ID_EMPTY, m + 24, 226, full - 48, 34);
-                put(ID_EMPTY_HELP, m + 24, 272, full - 48, 84);
+                put(ID_EMPTY_ART, m + 24, 208, 76, 76);
+                put(ID_EMPTY, m + 122, 216, full - 146, 34);
+                put(ID_EMPTY_HELP, m + 122, 266, full - 146, 84);
                 if !recovery {
-                    put(ID_NEW, m + 24, 370, 180, 36);
+                    put(ID_NEW, m + 122, 370, 180, 36);
                 }
             }
         }
@@ -151,11 +224,12 @@ pub fn layout(
             if has_saved {
                 put(ID_SAVED, m, 234, full, height - 346);
             } else {
-                put(ID_EMPTY, m + 24, 270, full - 48, 34);
-                put(ID_EMPTY_HELP, m + 24, 314, full - 48, 84);
+                put(ID_EMPTY_ART, m + 24, 256, 76, 76);
+                put(ID_EMPTY, m + 122, 266, full - 146, 34);
+                put(ID_EMPTY_HELP, m + 122, 310, full - 146, 84);
             }
             put(ID_RESTORE, m, action, 160, 34);
-            put(ID_DELETE, m + 172, action, 130, 34);
+            put(ID_DELETE, m + 172, action, 160, 34);
         }
         Page::Settings => {
             put(ID_LABEL_SETTINGS, m, 150, full, 28);
@@ -201,25 +275,27 @@ mod tests {
                 Page::Settings,
             ] {
                 for populated in [true, false] {
-                    let controls = layout(page, width, height, populated, populated, false);
-                    for (i, a) in controls.iter().enumerate() {
-                        assert!(
-                            a.x >= 0
-                                && a.y >= 0
-                                && a.width > 0
-                                && a.height > 0
-                                && a.x + a.width <= width
-                                && a.y + a.height <= height,
-                            "{page:?} {a:?}"
-                        );
-                        for b in &controls[i + 1..] {
+                    for recovery in [false, true] {
+                        let controls = layout(page, width, height, populated, populated, recovery);
+                        for (i, a) in controls.iter().enumerate() {
                             assert!(
-                                a.x + a.width <= b.x
-                                    || b.x + b.width <= a.x
-                                    || a.y + a.height <= b.y
-                                    || b.y + b.height <= a.y,
-                                "{page:?}: {a:?} overlaps {b:?}"
+                                a.x >= 0
+                                    && a.y >= 0
+                                    && a.width > 0
+                                    && a.height > 0
+                                    && a.x + a.width <= width
+                                    && a.y + a.height <= height,
+                                "{page:?} {a:?}"
                             );
+                            for b in &controls[i + 1..] {
+                                assert!(
+                                    a.x + a.width <= b.x
+                                        || b.x + b.width <= a.x
+                                        || a.y + a.height <= b.y
+                                        || b.y + b.height <= a.y,
+                                    "{page:?}: {a:?} overlaps {b:?}"
+                                );
+                            }
                         }
                     }
                 }
@@ -234,5 +310,49 @@ mod tests {
             assert!(!cache.changed(ID_GROUPS, vec!["Work".into()]));
         }
         assert!(cache.changed(ID_GROUPS, vec!["Work".into(), "Research".into()]));
+    }
+    #[test]
+    fn display_rows_keep_metadata_separate_without_changing_window_titles() {
+        use crate::model::{Identity, Rect, WindowInfo};
+        let mut window = WindowInfo {
+            identity: Identity {
+                handle: 1,
+                pid: 2,
+                started: 3,
+                class: "Editor".into(),
+            },
+            title: "Notes\nBudget\t2026\0.txt".into(),
+            executable: r"C:\Program Files\Editor\Editor.exe".into(),
+            bounds: Rect::default(),
+        };
+        assert_eq!(
+            window_row(&window, true),
+            "Notes Budget 2026 .txt\nEditor · Active window"
+        );
+        assert!(window.title.contains('\n'));
+        window.executable = "/apps/notes/editor".into();
+        assert_eq!(
+            window_row(&window, false).split_once('\n').unwrap().1,
+            "editor"
+        );
+        assert_eq!(
+            group_row("Work\nSaved", 1, "Minimized"),
+            "Work Saved\n1 window · Minimized"
+        );
+        assert_eq!(group_row("Work", 2, ""), "Work\n2 windows");
+    }
+    #[test]
+    fn window_icons_use_application_names_and_have_a_generic_fallback() {
+        for (name, kind) in [
+            ("Chrome", WindowKind::Browser),
+            ("MSedge", WindowKind::Browser),
+            ("explorer", WindowKind::Files),
+            ("powershell", WindowKind::Terminal),
+            ("Calendar", WindowKind::Calendar),
+            ("notepad", WindowKind::Editor),
+            ("My application", WindowKind::Application),
+        ] {
+            assert_eq!(window_kind(name), kind, "{name}");
+        }
     }
 }
