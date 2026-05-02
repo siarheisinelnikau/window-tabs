@@ -1,86 +1,86 @@
 [
   {
     "Screen": "groups",
-    "ProcessId": 51820,
+    "ProcessId": 8016,
     "ExitCode": 0,
-    "CpuMilliseconds": 46.875,
-    "RenderMilliseconds": 31,
+    "CpuMilliseconds": 31.25,
+    "RenderMilliseconds": 28,
     "RasterPasses": 1,
     "Viewport": [
       900,
       640
     ],
-    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
-    "Sha256": "d7cfc4b68a3c5a6b3054f4e3ab53494d77a648420f14996a35bf70eb0e1e97df"
+    "ExecutableSha256": "3be106bb090e9e952e3404467976ec5b3cd1c49f70fa18e3a1c212a82c1ef224",
+    "Sha256": "53629411e123e61125b9777267345c434df314e53fc77379ccfed1a85fdda893"
   },
   {
     "Screen": "settings",
-    "ProcessId": 50584,
+    "ProcessId": 40164,
     "ExitCode": 0,
-    "CpuMilliseconds": 46.875,
-    "RenderMilliseconds": 30,
-    "RasterPasses": 1,
-    "Viewport": [
-      900,
-      640
-    ],
-    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
-    "Sha256": "d3f5a171bd78f010e4273f635b4c4b0e1ecb3d7ef8259df091328be14aa1a5cb"
-  },
-  {
-    "Screen": "picker",
-    "ProcessId": 56748,
-    "ExitCode": 0,
-    "CpuMilliseconds": 31.25,
+    "CpuMilliseconds": 78.125,
     "RenderMilliseconds": 24,
     "RasterPasses": 1,
     "Viewport": [
       900,
       640
     ],
-    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
-    "Sha256": "5057d402416aea97a6b6bc099a143eb9e6865b06101458668070966cbb222b29"
+    "ExecutableSha256": "3be106bb090e9e952e3404467976ec5b3cd1c49f70fa18e3a1c212a82c1ef224",
+    "Sha256": "e00a31fd7863105f4d4767650116673de0fde0261a3976296862e0563b3da746"
   },
   {
-    "Screen": "empty",
-    "ProcessId": 57244,
-    "ExitCode": 0,
-    "CpuMilliseconds": 46.875,
-    "RenderMilliseconds": 22,
-    "RasterPasses": 1,
-    "Viewport": [
-      900,
-      640
-    ],
-    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
-    "Sha256": "344b5a61174c46315a2574161144ae886409e4020ece6e50264afb31f812da30"
-  },
-  {
-    "Screen": "saved",
-    "ProcessId": 44152,
+    "Screen": "picker",
+    "ProcessId": 54448,
     "ExitCode": 0,
     "CpuMilliseconds": 31.25,
-    "RenderMilliseconds": 26,
-    "RasterPasses": 1,
-    "Viewport": [
-      900,
-      640
-    ],
-    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
-    "Sha256": "3d2a268be004ba7033df2712cac75c7ce4d7004a308a4a0abe0370ba1aa86ff8"
-  },
-  {
-    "Screen": "recovery",
-    "ProcessId": 24204,
-    "ExitCode": 0,
-    "CpuMilliseconds": 46.875,
     "RenderMilliseconds": 25,
     "RasterPasses": 1,
     "Viewport": [
       900,
       640
     ],
-    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
-    "Sha256": "f419966301538f5efb4765b979f7e54ff333f2130a3c54f3861f8cc18f96fca4"
+    "ExecutableSha256": "3be106bb090e9e952e3404467976ec5b3cd1c49f70fa18e3a1c212a82c1ef224",
+    "Sha256": "c2f67f129c4e4070382f4838a6ea10a38d31b932972655811ef646d8e92b5d94"
+  },
+  {
+    "Screen": "empty",
+    "ProcessId": 52108,
+    "ExitCode": 0,
+    "CpuMilliseconds": 31.25,
+    "RenderMilliseconds": 23,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "3be106bb090e9e952e3404467976ec5b3cd1c49f70fa18e3a1c212a82c1ef224",
+    "Sha256": "5d1c2f6cb302927186e5d76e679e85def12d169475ba064413534ee5a8dd5b93"
+  },
+  {
+    "Screen": "saved",
+    "ProcessId": 50228,
+    "ExitCode": 0,
+    "CpuMilliseconds": 46.875,
+    "RenderMilliseconds": 35,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "3be106bb090e9e952e3404467976ec5b3cd1c49f70fa18e3a1c212a82c1ef224",
+    "Sha256": "e5e324669474dbb098f911fe308f52bec78190df4c146cb7371e6b1fe6e4444e"
+  },
+  {
+    "Screen": "recovery",
+    "ProcessId": 38552,
+    "ExitCode": 0,
+    "CpuMilliseconds": 31.25,
+    "RenderMilliseconds": 23,
+    "RasterPasses": 1,
+    "Viewport": [
+      900,
+      640
+    ],
+    "ExecutableSha256": "3be106bb090e9e952e3404467976ec5b3cd1c49f70fa18e3a1c212a82c1ef224",
+    "Sha256": "f8de1da491f9640aaa69fcd484f6e553dd6424a5bbc63b4665e45be3d853b479"
   }
 ]

@@ -17,7 +17,7 @@ WindowTabs introduces native tab groups for related, already-open Windows deskto
 
 The intended first asset is **WindowTabs-v0.1.0.exe** for Windows x64, accompanied by **SHA256SUMS.txt**. It is an unelevated portable application; settings live in LocalAppData. No release has been published.
 
-Compilation and synthetic tests do not verify cross-process desktop behavior. Interactive window grouping, DPI/monitor transitions, focus/Z-order, recovery on a real desktop, and live update installation require the manual checks in `docs/VALIDATION.md`. Elevated, special, modal, hung, and cloaked windows are excluded. Real manager and settings screenshots remain required before publication.
+Compilation and synthetic tests do not verify cross-process desktop behavior. Interactive window grouping, DPI/monitor transitions, focus/Z-order, recovery on a real desktop, and live update installation require the manual checks in `docs/VALIDATION.md`. Elevated, special, modal, hung, and cloaked windows are excluded. Native manager/settings client captures are available; the tab strip with actual grouped applications remains uncaptured.
 
 ### Fixed during local review
 
@@ -35,4 +35,6 @@ Compilation and synthetic tests do not verify cross-process desktop behavior. In
 - Avoided rebuilding unchanged lists, updating hidden/minimized manager views, or relaying out hidden/unchanged tab strips. Actual idle/hidden performance remains unmeasured.
 - Added an isolated developer self-capture mode that renders native client controls directly to PNG and exits without visible windows, user data, window discovery or network requests. Nine final images were statically reviewed, including Settings and minimum-size/error states.
 - Added two presentation regressions for 35 passing tests, and updated release packaging/notices for PNG encoding. Interactive window grouping, input, focus, DPI transitions and live updater validation remain pending.
+- Added original labeled action/navigation icons, colored window-type badges, two-line list rows, a stacked-tab application logo, and a soft violet palette with rounded controls and padded fields. The standalone EXE includes a multi-resolution icon. Static captures exposed and resolved truncated Rename, Detach and Delete saved labels.
+- Kept off-page lists hidden during retained-content refresh instead of reenabling their visibility with redraw. The isolated capture now checks this invariant after a data refresh. Two more presentation regressions cover display-title preservation and icon-category fallback, bringing the total to 37 passing tests.
 
