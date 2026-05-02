@@ -1,30 +1,30 @@
 [
   {
     "Screen": "groups",
-    "ProcessId": 58948,
+    "ProcessId": 28100,
     "ExitCode": 0,
     "CpuMilliseconds": 46.875,
-    "RenderMilliseconds": 27,
+    "RenderMilliseconds": 26,
     "RasterPasses": 1,
     "Viewport": [
       820,
       600
     ],
-    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
-    "Sha256": "903eb52e1e39bd4f135631136a273edcb84ebcbc291d3a3139a9494c59c2113c"
+    "ExecutableSha256": "3be106bb090e9e952e3404467976ec5b3cd1c49f70fa18e3a1c212a82c1ef224",
+    "Sha256": "a5c827ca5bae13830dcd2200199707c09aa53773f722592588f4c52a19da1e6e"
   },
   {
     "Screen": "settings",
-    "ProcessId": 22040,
+    "ProcessId": 48124,
     "ExitCode": 0,
-    "CpuMilliseconds": 46.875,
-    "RenderMilliseconds": 27,
+    "CpuMilliseconds": 31.25,
+    "RenderMilliseconds": 25,
     "RasterPasses": 1,
     "Viewport": [
       820,
       600
     ],
-    "ExecutableSha256": "af4ef55e13713324d3618f0ec8581a9132093330f0191eaf5f3f190166e9cc6b",
-    "Sha256": "e70db17ae603db2e7ea593f31cca1561ab683886da549b1cdba871f2511511f7"
+    "ExecutableSha256": "3be106bb090e9e952e3404467976ec5b3cd1c49f70fa18e3a1c212a82c1ef224",
+    "Sha256": "6e6a72d2b8f1670aec071162598ed2e27d3e8179f0fa7598b85ae27df989438d"
   }
 ]
