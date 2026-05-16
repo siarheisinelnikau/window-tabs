@@ -1,0 +1,97 @@
+{
+  "executable": "E:\\work\\github\\window-tabs\\dist\\v0.1.0\\WindowTabs-v0.1.0.exe",
+  "sha256": "cd84ee49d63502beefc7650f210502c5700fa10537dbd1a52b0fa21832e0fb70",
+  "scope": "Resource-only LoadImageW / DrawIconEx proof; application not launched; OS tray/window integration unverified",
+  "icons": [
+    {
+      "size": 16,
+      "visiblePixels": 217,
+      "alphaBounds": [
+        1,
+        1,
+        15,
+        15
+      ]
+    },
+    {
+      "size": 20,
+      "visiblePixels": 342,
+      "alphaBounds": [
+        1,
+        1,
+        19,
+        19
+      ]
+    },
+    {
+      "size": 24,
+      "visiblePixels": 497,
+      "alphaBounds": [
+        1,
+        1,
+        23,
+        23
+      ]
+    },
+    {
+      "size": 32,
+      "visiblePixels": 883,
+      "alphaBounds": [
+        1,
+        1,
+        31,
+        31
+      ]
+    },
+    {
+      "size": 40,
+      "visiblePixels": 1377,
+      "alphaBounds": [
+        1,
+        1,
+        39,
+        39
+      ]
+    },
+    {
+      "size": 48,
+      "visiblePixels": 1902,
+      "alphaBounds": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "size": 64,
+      "visiblePixels": 3429,
+      "alphaBounds": [
+        2,
+        2,
+        62,
+        62
+      ]
+    },
+    {
+      "size": 128,
+      "visiblePixels": 13491,
+      "alphaBounds": [
+        4,
+        4,
+        124,
+        124
+      ]
+    },
+    {
+      "size": 256,
+      "visiblePixels": 53570,
+      "alphaBounds": [
+        8,
+        8,
+        248,
+        248
+      ]
+    }
+  ]
+}

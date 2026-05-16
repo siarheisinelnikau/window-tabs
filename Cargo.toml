@@ -2,7 +2,7 @@
 name = "window-tabs"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.95"
 license = "MIT"
 description = "Native tab groups for ordinary Windows application windows"
 repository = "https://github.com/siarheisinelnikau/window-tabs"
@@ -11,9 +11,8 @@ build = "build.rs"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-semver = "1.0"
-sha2 = "0.10"
 png = "0.18.1"
+rust-auto-updator = { path = "../rust-auto-updator/crates/rust-auto-updator" }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", features = [
