@@ -10,6 +10,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Require the local shared updater prerequisite
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath ../rust-auto-updator/crates/rust-auto-updator/Cargo.toml)) {
+            throw 'Provision rust-auto-updator beside this repository before verification. The shared crate is currently a local dependency; no remote source has been published.'
+          }
       - name: Verify formatting, isolated tests, and Clippy
         shell: pwsh
         run: ./scripts/verify.ps1

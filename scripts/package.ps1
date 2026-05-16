@@ -14,6 +14,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
     $taskBinary = Join-Path $taskTarget 'x86_64-pc-windows-msvc\release\WindowTabs.exe'
     & (Join-Path $PSScriptRoot 'inspect-pe.ps1') -Path $taskBinary
+    & (Join-Path $PSScriptRoot 'inspect-icons.ps1') -ExecutablePath $taskBinary -ResourceId 1 -OutputDirectory (Join-Path $taskTarget 'package-icon-proof')
     $taskOutput = Join-Path $taskRoot "dist\v$taskVersion"
     New-Item -ItemType Directory -Force -Path $taskOutput | Out-Null
     $taskName = "WindowTabs-v$taskVersion.exe"

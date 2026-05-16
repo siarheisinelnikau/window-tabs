@@ -57,8 +57,8 @@ impl Drop for Fixture {
 }
 fn release(version: &str) -> Value {
     let filename = format!("WindowTabs-v{version}.exe");
-    json!({"tag_name":format!("v{version}"),"draft":false,"prerelease":false,"assets":[
-        {"name":filename,"browser_download_url":format!("https://github.com/siarheisinelnikau/window-tabs/releases/download/v{version}/{filename}"),"size":1000},
+    json!({"tag_name":format!("v{version}"),"html_url":format!("https://github.com/siarheisinelnikau/window-tabs/releases/tag/v{version}"),"draft":false,"prerelease":false,"assets":[
+        {"name":filename,"browser_download_url":format!("https://github.com/siarheisinelnikau/window-tabs/releases/download/v{version}/{filename}"),"size":4096},
         {"name":"SHA256SUMS.txt","browser_download_url":format!("https://github.com/siarheisinelnikau/window-tabs/releases/download/v{version}/SHA256SUMS.txt"),"size":100}
     ]})
 }
@@ -114,41 +114,28 @@ fn checksum_parser_requires_one_exact_complete_hash() {
     assert!(checksum(&format!("{hash}  {name} trailing"), name).is_err());
 }
 #[test]
-fn payload_validation_rejects_truncation_wrong_architecture_and_tampering() {
+fn shared_payload_validation_rejects_wrong_architecture_and_tampering() {
     let fixture = Fixture::new();
     let staged = fixture.pe("payload.exe", 0x8664);
-    let helper = fixture.0.join("WindowTabs-updater.exe");
-    let target = fixture.0.join("installed").join("WindowTabs.exe");
-    fs::create_dir_all(target.parent().unwrap()).unwrap();
-    fs::copy(&staged, &target).unwrap();
-    fs::copy(&staged, &helper).unwrap();
-    let plan = InstallPlan {
-        parent_pid: 123,
-        target: fs::canonicalize(target).unwrap(),
-        staged: staged.clone(),
-        sha256: hash_file(&staged).unwrap(),
-        original_sha256: hash_file(&helper).unwrap(),
-        transaction_id: "a".repeat(32),
-    };
-    // A helper cannot install into its own temporary directory tree.
-    assert!(plan.validate(&helper).is_err());
-    let temporary = fixture.0.join("download");
-    fs::create_dir(&temporary).unwrap();
-    let helper = temporary.join("WindowTabs-updater.exe");
-    fs::copy(&staged, &helper).unwrap();
-    let downloaded = temporary.join("payload.exe");
-    fs::copy(&staged, &downloaded).unwrap();
-    let plan = InstallPlan {
-        staged: fs::canonicalize(downloaded).unwrap(),
-        ..plan
-    };
-    plan.validate(&helper).unwrap();
-    fs::write(&plan.staged, b"partial file").unwrap();
-    assert!(plan.validate(&helper).is_err());
+    let expected = hash_file(&staged).unwrap();
+    rust_auto_updator::verify_executable(
+        &staged,
+        &expected,
+        1024,
+        rust_auto_updator::Architecture::X64,
+    )
+    .unwrap();
     assert!(verify_pe(&fixture.pe("arm.exe", 0xaa64)).is_err());
-    let mut plan = plan;
-    plan.staged = fixture.0.join("elsewhere").join("payload.exe");
-    assert!(plan.validate(&helper).is_err());
+    fs::write(&staged, b"partial file").unwrap();
+    assert!(
+        rust_auto_updator::verify_executable(
+            &staged,
+            &expected,
+            1024,
+            rust_auto_updator::Architecture::X64,
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -174,30 +161,6 @@ fn executable_headers_cannot_mask_truncated_data_or_a_dll() {
     bytes[168..172].copy_from_slice(&0x1800u32.to_le_bytes());
     fs::write(&path, &bytes).unwrap();
     assert!(verify_pe(&path).is_err());
-}
-
-#[test]
-fn installation_plan_rejects_a_changed_current_executable_and_path_components() {
-    let fixture = Fixture::new();
-    fs::create_dir(fixture.0.join("download")).unwrap();
-    let target = fixture.pe("WindowTabs.exe", 0x8664);
-    let staged = fixture.pe("download/payload.exe", 0x8664);
-    let helper = fixture.pe("download/WindowTabs-updater.exe", 0x8664);
-    let mut plan = InstallPlan {
-        parent_pid: 123,
-        target: target.clone(),
-        staged: staged.clone(),
-        sha256: hash_file(&staged).unwrap(),
-        original_sha256: hash_file(&target).unwrap(),
-        transaction_id: "b".repeat(32),
-    };
-    plan.validate(&helper).unwrap();
-    plan.transaction_id = "../escape".into();
-    assert!(plan.validate(&helper).is_err());
-    plan.transaction_id = "b".repeat(32);
-    fs::write(&target, b"another installation").unwrap();
-    assert!(plan.validate(&helper).is_err());
-    assert_eq!(fs::read(&target).unwrap(), b"another installation");
 }
 
 #[test]

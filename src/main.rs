@@ -18,5 +18,7 @@ fn main() {
         }
     }
     #[cfg(not(windows))]
-    eprintln!("WindowTabs requires Windows 10 version 1703 or later. Core tests are portable.");
+    eprintln!(
+        "WindowTabs requires Windows 10 version 1703 or later. The shared updater currently targets Windows."
+    );
 }

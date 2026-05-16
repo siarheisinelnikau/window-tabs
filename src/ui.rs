@@ -34,6 +34,7 @@ use windows_sys::{
 #[path = "ui_art.rs"]
 mod art;
 
+const APP_ICON_RESOURCE: *const u16 = std::ptr::without_provenance(1);
 const MAIN_CLASS: *const u16 = w!("WindowTabs.Manager.v1");
 const STRIP_CLASS: *const u16 = w!("WindowTabs.Strip.v1");
 const STATE: u32 = WM_APP + 1;
@@ -156,7 +157,7 @@ thread_local! {
 enum UpdateNotice {
     Checked(std::result::Result<Option<Available>, String>),
     Progress(u64, u64),
-    Downloaded(std::result::Result<PathBuf, String>),
+    Downloaded(std::result::Result<update::Prepared, String>),
 }
 struct Strip {
     window: HWND,
@@ -183,7 +184,7 @@ struct App {
     update_mailbox: Arc<Mutex<Option<UpdateNotice>>>,
     cancel: Arc<AtomicBool>,
     store: Store,
-    install_plan: Option<PathBuf>,
+    install_plan: Option<update::Prepared>,
     install_request_id: u64,
     closing: bool,
     page: Page,
@@ -456,23 +457,37 @@ impl Drop for CaptureBitmap {
     }
 }
 
+fn assign_window_icons(window: HWND, instance: HINSTANCE, dpi: u32) {
+    unsafe {
+        for (kind, metric) in [(ICON_BIG, SM_CXICON), (ICON_SMALL, SM_CXSMICON)] {
+            let size = GetSystemMetricsForDpi(metric, dpi);
+            let icon = LoadImageW(
+                instance,
+                APP_ICON_RESOURCE,
+                IMAGE_ICON,
+                size,
+                size,
+                LR_SHARED,
+            );
+            if !icon.is_null() {
+                SendMessageW(window, WM_SETICON, kind as usize, icon as isize);
+            }
+        }
+    }
+}
+
 pub fn run() -> Result<()> {
     let args: Vec<_> = std::env::args_os().collect();
     if args.get(1).is_some_and(|arg| arg == "--apply-update") {
-        let path = args
-            .get(2)
-            .ok_or("The updater requires an installation plan.")?;
-        let result = update::native::apply(&PathBuf::from(path));
-        if let Err(error) = &result
-            && let Some(parent) = PathBuf::from(path).parent()
-        {
-            let _ = std::fs::write(parent.join("install-error.txt"), error);
-        }
-        return result;
+        return rust_auto_updator::apply_update(&update::config(crate::VERSION)?);
     }
-    if args.len() > 1 {
+    let cleanup = if args.get(1).is_some_and(|arg| arg == "--cleanup-update") && args.len() == 3 {
+        Some(PathBuf::from(&args[2]))
+    } else if args.len() > 1 {
         return Err("Unknown argument. Start WindowTabs without arguments.".into());
-    }
+    } else {
+        None
+    };
     let _instance = platform::Instance::acquire()?;
     let root = std::env::var_os("LOCALAPPDATA").ok_or("LOCALAPPDATA is unavailable.")?;
     let store = Store::new(PathBuf::from(root).join("WindowTabs"));
@@ -501,7 +516,7 @@ pub fn run() -> Result<()> {
                 hInstance: instance,
                 lpszClassName: name,
                 hCursor: LoadCursorW(null_mut(), IDC_ARROW),
-                hIcon: LoadIconW(instance, w!("WINDOWTABS_ICON")),
+                hIcon: LoadIconW(instance, APP_ICON_RESOURCE),
                 hbrBackground: (COLOR_BTNFACE + 1) as usize as HBRUSH,
                 ..zeroed()
             };
@@ -540,9 +555,16 @@ pub fn run() -> Result<()> {
                 std::io::Error::last_os_error()
             ));
         }
+        assign_window_icons(window, instance, dpi as u32);
         MANAGER.store(window as isize, Ordering::Relaxed);
         let app = App::new(window, store, false)?;
         APP.with(|state| *state.borrow_mut() = Some(app));
+        if let Some(directory) = cleanup {
+            rust_auto_updator::cleanup_after_update(
+                directory,
+                update::config(crate::VERSION)?.install,
+            );
+        }
         APP.with(|state| {
             if let Some(app) = state.borrow_mut().as_mut() {
                 app.layout();
@@ -1338,10 +1360,22 @@ impl App {
         }
         if self.snapshot.quit {
             if self.snapshot.install_result == Some((self.install_request_id, true))
-                && let Some(plan) = self.install_plan.take()
-                && let Err(error) = update::native::launch_helper(&plan)
+                && let Some(mut prepared) = self.install_plan.take()
+                && let Err(error) = rust_auto_updator::handoff(&mut prepared)
             {
-                fatal(&error);
+                self.snapshot.quit = false;
+                self.closing = false;
+                self.set(
+                    ID_UPDATE_STATUS,
+                    &format!("Update was not installed: {error}"),
+                );
+                // The restoration worker finished successfully. Recreate it so a failed
+                // helper launch does not close the application or strand its controls.
+                match controller::start(self.store.clone(), self.window as isize, STATE) {
+                    Ok(worker) => self.worker = worker,
+                    Err(error) => self.set(ID_STATUS, &error),
+                }
+                return;
             }
             unsafe {
                 DestroyWindow(self.window);
@@ -1882,7 +1916,7 @@ impl App {
             post_update(
                 &mailbox,
                 window,
-                UpdateNotice::Checked(update::native::check(&cancel)),
+                UpdateNotice::Checked(update::check(&cancel)),
             );
         });
     }
@@ -1912,18 +1946,13 @@ impl App {
         let mailbox = self.update_mailbox.clone();
         let cancel = self.cancel.clone();
         let window = self.window as isize;
-        let root = self.store.root.clone();
         thread::spawn(move || {
             let mut last = 0;
-            let result = update::native::download(&available, &root, cancel, |bytes| {
-                let percent = bytes * 100 / available.executable.size;
+            let result = update::download(&available, &cancel, |bytes, total| {
+                let percent = bytes * 100 / total.max(1);
                 if percent != last {
                     last = percent;
-                    post_update(
-                        &mailbox,
-                        window,
-                        UpdateNotice::Progress(bytes, available.executable.size),
-                    );
+                    post_update(&mailbox, window, UpdateNotice::Progress(bytes, total));
                 }
             });
             post_update(&mailbox, window, UpdateNotice::Downloaded(result));
@@ -2076,8 +2105,15 @@ unsafe extern "system" fn main_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
+    // Capture is deliberately finite; ordinary hidden windows only retain dirty state.
+    let paint_allowed = CAPTURE_MODE.load(Ordering::Relaxed)
+        || unsafe { IsWindowVisible(window) != 0 && IsIconic(window) == 0 };
     if message == WM_DRAWITEM {
-        return unsafe { art::draw(lparam as *const DRAWITEMSTRUCT) };
+        return if paint_allowed {
+            unsafe { art::draw(lparam as *const DRAWITEMSTRUCT) }
+        } else {
+            1
+        };
     }
     if message == WM_MEASUREITEM {
         let measure = unsafe { &mut *(lparam as *mut MEASUREITEMSTRUCT) };
@@ -2115,14 +2151,18 @@ unsafe extern "system" fn main_proc(
         }
     }
     if message == WM_ERASEBKGND || message == WM_PRINTCLIENT {
-        paint_background(window, wparam as HDC);
+        if paint_allowed {
+            paint_background(window, wparam as HDC);
+        }
         return 1;
     }
     if message == WM_PAINT {
         unsafe {
             let mut paint: PAINTSTRUCT = zeroed();
             let dc = BeginPaint(window, &mut paint);
-            paint_background(window, dc);
+            if paint_allowed {
+                paint_background(window, dc);
+            }
             EndPaint(window, &paint);
         }
         return 0;
@@ -2242,6 +2282,11 @@ unsafe extern "system" fn main_proc(
                         SWP_NOZORDER | SWP_NOACTIVATE,
                     );
                 }
+                assign_window_icons(
+                    window,
+                    unsafe { GetModuleHandleW(null()) },
+                    (wparam & 0xffff) as u32,
+                );
                 app.update_font();
                 app.layout_key = None;
                 app.list_cache = ContentCache::default();

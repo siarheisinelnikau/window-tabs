@@ -15,7 +15,7 @@ function New-TaskRoundedPath([single]$X, [single]$Y, [single]$Width, [single]$He
     $taskPath.CloseFigure()
     return ,$taskPath
 }
-$taskSizes = @(16, 24, 32, 48, 64, 128, 256)
+$taskSizes = @(16, 20, 24, 32, 40, 48, 64, 128, 256)
 $taskImages = @()
 foreach ($taskSize in $taskSizes) {
     $taskBitmap = [Drawing.Bitmap]::new($taskSize, $taskSize)
