@@ -100,9 +100,9 @@ fn palette() -> Palette {
                 text: art::rgb(241, 239, 250),
                 secondary: art::rgb(185, 180, 202),
                 border: art::rgb(70, 65, 88),
-                accent: art::rgb(133, 115, 241),
-                accent_down: art::rgb(108, 88, 218),
-                on_accent: art::rgb(255, 255, 255),
+                accent: art::rgb(171, 157, 255),
+                accent_down: art::rgb(151, 135, 235),
+                on_accent: art::rgb(25, 24, 34),
                 selection: art::rgb(65, 54, 100),
                 disabled: art::rgb(43, 40, 55),
                 high_contrast: false,
@@ -804,7 +804,7 @@ impl App {
                 (ID_LABEL_MEMBERS, "Windows in this group"),
                 (ID_LABEL_NAME, "Group name"),
                 (ID_LABEL_SAVED, "Saved groups"),
-                (ID_LABEL_SETTINGS, "Updates"),
+                (ID_LABEL_SETTINGS, "Settings"),
                 (ID_BRAND, "WindowTabs"),
                 (ID_TAGLINE, "Keep related windows together."),
                 (ID_HELP, ""),
@@ -2470,12 +2470,20 @@ unsafe extern "system" fn strip_proc(
     let manager = MANAGER.load(Ordering::Relaxed) as HWND;
     let group = unsafe { GetWindowLongPtrW(window, GWLP_USERDATA) } as usize;
     match message {
-        WM_DRAWITEM => unsafe { art::draw(lparam as *const DRAWITEMSTRUCT) },
+        WM_DRAWITEM => {
+            if unsafe { IsWindowVisible(window) } != 0 {
+                unsafe { art::draw(lparam as *const DRAWITEMSTRUCT) }
+            } else {
+                1
+            }
+        }
         WM_ERASEBKGND => {
-            unsafe {
-                let mut rect = RECT::default();
-                GetClientRect(window, &mut rect);
-                art::fill(wparam as HDC, rect, palette().background);
+            if unsafe { IsWindowVisible(window) } != 0 {
+                unsafe {
+                    let mut rect = RECT::default();
+                    GetClientRect(window, &mut rect);
+                    art::fill(wparam as HDC, rect, palette().background);
+                }
             }
             1
         }
@@ -2536,10 +2544,12 @@ unsafe extern "system" fn tab_background(
     _: usize,
 ) -> LRESULT {
     if message == WM_ERASEBKGND {
-        unsafe {
-            let mut rect = RECT::default();
-            GetClientRect(window, &mut rect);
-            art::fill(wparam as HDC, rect, palette().background);
+        if unsafe { IsWindowVisible(window) } != 0 {
+            unsafe {
+                let mut rect = RECT::default();
+                GetClientRect(window, &mut rect);
+                art::fill(wparam as HDC, rect, palette().background);
+            }
         }
         return 1;
     }

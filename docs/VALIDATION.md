@@ -1,5 +1,15 @@
 # Validation record
 
+## 0.2.0 localization and theme verification — 2026-11-01
+
+- `cargo test --offline --locked --all-targets`: 33 tests passed. Coverage includes all 148 catalog messages and placeholder counts, parameterized update/status text, preservation of titles and saved group names, Russian count forms, legacy-settings migration with saved templates/update opt-out, atomic preference round trips, and the existing group/recovery/updater regressions.
+- The native font-width regression uses a memory GDI DC and Segoe UI at the production 15-pixel size. Every translated action caption fits its icon/padding allowance at the minimum 820×600 layout. The structural layout regression also passes all page/population/recovery combinations. These checks do not establish complete visual layout or DPI behavior.
+- English/Russian/French/German/Spanish/Italian cover navigation, manager/picker/settings controls, group metadata, group and tab-strip menus, recovery instructions, application eligibility messages, and update status/progress. Source-English worker protocol strings remain stable; the presentation layer translates only known UI messages, preserving parameter data and unknown OS/network diagnostic details. Native OS menu styling follows Windows.
+- Source inspection: the existing blocking `GetMessageW` loop, bounded worker and event coalescing remain. Preference saves occur in the worker on an explicit action. A changed preference retranslates retained controls and invalidates visible surfaces once; hidden manager/strips retain state, with paint guards and no new recurring timer.
+- The repository’s code-only/no-launch restriction remains in force. No ordinary GUI launch, self-capture, real application grouping, update request/install, OS input, or user settings/device change occurred. Refreshed main/Settings screenshots, actual native dark tab-strip appearance, focus/input, DPI, and measured idle/hidden frame/CPU/present behavior remain unverified. Existing images below belong to 0.1.0.
+
+The remaining record describes historical **0.1.0** verification and its manual desktop matrix.
+
 ## Session boundaries
 
 Initial implementation and recovery/updater review on 2026-10-31 used code-only verification. During the later interface review, the user explicitly authorized only a hidden, isolated render-save-exit mode. No ordinary GUI session, computer use, actual desktop-window discovery/manipulation, update check/download/installer, or remote Git operation occurred. Cargo builds used at most two jobs with a repository-local target directory. Fixtures and capture data are synthetic; neither tests nor self-capture use real LocalAppData settings.
