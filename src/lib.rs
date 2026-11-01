@@ -2,9 +2,11 @@
 mod capture_fixture;
 #[cfg(windows)]
 mod controller;
+pub mod localization;
 pub mod model;
 #[cfg(windows)]
 pub mod platform;
+pub mod preferences;
 mod presentation;
 pub mod storage;
 #[cfg(windows)]

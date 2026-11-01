@@ -39,7 +39,7 @@ pub(super) enum Icon {
 pub(super) fn icon_for(id: i32) -> Icon {
     match id {
         ID_NAV_SAVED | ID_LABEL_SAVED => Icon::Bookmark,
-        ID_NAV_SETTINGS => Icon::Settings,
+        ID_NAV_SETTINGS | ID_LANGUAGE | ID_THEME => Icon::Settings,
         ID_LABEL_SETTINGS | ID_CHECK => Icon::Refresh,
         ID_NEW | ID_CREATE | ID_ADD => Icon::Plus,
         ID_CANCEL => Icon::Back,
@@ -265,10 +265,55 @@ pub(super) unsafe fn draw(raw: *const DRAWITEMSTRUCT) -> LRESULT {
             ODT_BUTTON => button(item),
             ODT_LISTBOX => row(item),
             ODT_STATIC => label(item),
+            ODT_TAB => tab(item),
             _ => {}
         }
         RestoreDC(item.hDC, saved);
         1
+    }
+}
+unsafe fn tab(item: &DRAWITEMSTRUCT) {
+    unsafe {
+        let theme = palette();
+        let selected = item.itemState & ODS_SELECTED != 0;
+        let mut title = [0u16; 512];
+        let mut data = TCITEMW {
+            mask: TCIF_TEXT,
+            pszText: title.as_mut_ptr(),
+            cchTextMax: title.len() as i32,
+            ..std::mem::zeroed()
+        };
+        SendMessageW(
+            item.hwndItem,
+            TCM_GETITEMW,
+            item.itemID as usize,
+            &mut data as *mut _ as isize,
+        );
+        let len = title.iter().position(|c| *c == 0).unwrap_or(title.len());
+        fill(item.hDC, item.rcItem, theme.background);
+        rounded(
+            item.hDC,
+            item.rcItem,
+            if selected {
+                theme.selection
+            } else {
+                theme.surface
+            },
+            theme.border,
+            8,
+        );
+        let mut rect = item.rcItem;
+        rect.left += 10;
+        rect.right -= 10;
+        text(
+            item.hDC,
+            &String::from_utf16_lossy(&title[..len]),
+            rect,
+            theme.text,
+        );
+        if item.itemState & ODS_FOCUS != 0 {
+            DrawFocusRect(item.hDC, &rect);
+        }
     }
 }
 unsafe fn button(item: &DRAWITEMSTRUCT) {

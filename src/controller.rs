@@ -50,6 +50,7 @@ pub enum Command {
     Restore(usize),
     Delete(usize),
     Startup(bool),
+    Preferences(crate::preferences::Language, crate::preferences::Theme),
     Recover,
     Quit,
     InstallAndQuit(u64),
@@ -122,6 +123,7 @@ impl Controller {
                 | Command::Sync
                 | Command::Recover
                 | Command::Startup(_)
+                | Command::Preferences(_, _)
                 | Command::Delete(_)
                 | Command::Quit
                 | Command::InstallAndQuit(_)
@@ -245,6 +247,14 @@ impl Controller {
                 self.engine.adapter.store.save_settings(&settings)?;
                 self.settings = settings;
                 "Update preference saved.".into()
+            }
+            Command::Preferences(language, theme) => {
+                let mut settings = self.settings.clone();
+                settings.language = language;
+                settings.theme = theme;
+                self.engine.adapter.store.save_settings(&settings)?;
+                self.settings = settings;
+                "Appearance preferences saved.".into()
             }
             Command::Recover => {
                 let mut remaining = vec![];
