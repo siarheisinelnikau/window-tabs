@@ -39,8 +39,8 @@ pub(super) enum Icon {
 pub(super) fn icon_for(id: i32) -> Icon {
     match id {
         ID_NAV_SAVED | ID_LABEL_SAVED => Icon::Bookmark,
-        ID_NAV_SETTINGS | ID_LANGUAGE | ID_THEME => Icon::Settings,
-        ID_LABEL_SETTINGS | ID_CHECK => Icon::Refresh,
+        ID_NAV_SETTINGS | ID_LABEL_SETTINGS | ID_LANGUAGE | ID_THEME => Icon::Settings,
+        ID_CHECK => Icon::Refresh,
         ID_NEW | ID_CREATE | ID_ADD => Icon::Plus,
         ID_CANCEL => Icon::Back,
         ID_MORE => Icon::More,
@@ -276,6 +276,10 @@ unsafe fn tab(item: &DRAWITEMSTRUCT) {
     unsafe {
         let theme = palette();
         let selected = item.itemState & ODS_SELECTED != 0;
+        let font = SendMessageW(item.hwndItem, WM_GETFONT, 0, 0) as HFONT;
+        if !font.is_null() {
+            SelectObject(item.hDC, font);
+        }
         let mut title = [0u16; 512];
         let mut data = TCITEMW {
             mask: TCIF_TEXT,
@@ -375,6 +379,23 @@ unsafe fn button(item: &DRAWITEMSTRUCT) {
         let font = SendMessageW(item.hwndItem, WM_GETFONT, 0, 0) as HFONT;
         if !font.is_null() {
             SelectObject(dc, font);
+        }
+        if [STRIP_MENU, STRIP_CLOSE].contains(&id) {
+            let mut bounds = r;
+            let title = wide(&caption(item.hwndItem));
+            SetTextColor(dc, fg);
+            SetBkMode(dc, TRANSPARENT as i32);
+            DrawTextW(
+                dc,
+                title.as_ptr(),
+                -1,
+                &mut bounds,
+                DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX,
+            );
+            if item.itemState & ODS_FOCUS != 0 {
+                DrawFocusRect(dc, &bounds);
+            }
+            return;
         }
         let glyph = icon_for(id);
         let size = s(17);

@@ -168,7 +168,7 @@
     "Rinomina"
   ],
   "Switch": [
-    "Переключить",
+    "Открыть",
     "Activer",
     "Wechseln",
     "Cambiar",
@@ -915,5 +915,124 @@
     "WindowTabs — Fenstergruppen",
     "WindowTabs — Grupos de ventanas",
     "WindowTabs — Gruppi di finestre"
+  ],
+  "Window is hidden, disabled, or no longer exists.": [
+    "Окно скрыто, отключено или больше не существует.",
+    "La fenêtre est masquée, désactivée ou n'existe plus.",
+    "Fenster ist ausgeblendet, deaktiviert oder nicht mehr vorhanden.",
+    "La ventana está oculta, deshabilitada o ya no existe.",
+    "La finestra è nascosta, disabilitata o non esiste più."
+  ],
+  "Owned windows and WindowTabs windows cannot participate.": [
+    "Подчинённые окна и окна WindowTabs нельзя группировать.",
+    "Les fenêtres dépendantes et celles de WindowTabs ne peuvent pas être groupées.",
+    "Abhängige Fenster und WindowTabs-Fenster können nicht gruppiert werden.",
+    "Las ventanas dependientes y de WindowTabs no pueden agruparse.",
+    "Le finestre dipendenti e di WindowTabs non possono essere raggruppate."
+  ],
+  "This special or fixed-size window cannot safely participate.": [
+    "Это специальное окно или окно фиксированного размера нельзя безопасно сгруппировать.",
+    "Cette fenêtre spéciale ou de taille fixe ne peut pas être groupée sans risque.",
+    "Dieses spezielle Fenster oder Fenster fester Größe kann nicht sicher gruppiert werden.",
+    "Esta ventana especial o de tamaño fijo no puede agruparse de forma segura.",
+    "Questa finestra speciale o a dimensione fissa non può essere raggruppata in sicurezza."
+  ],
+  "Cloaked windows or another virtual desktop are unsupported.": [
+    "Скрытые системой окна и другие виртуальные рабочие столы не поддерживаются.",
+    "Les fenêtres masquées par le système ou sur un autre bureau virtuel ne sont pas prises en charge.",
+    "Systemseitig verborgene Fenster oder andere virtuelle Desktops werden nicht unterstützt.",
+    "No se admiten ventanas ocultas por el sistema o de otro escritorio virtual.",
+    "Finestre nascoste dal sistema o di un altro desktop virtuale non supportate."
+  ],
+  "The application is not responding.": [
+    "Приложение не отвечает.",
+    "L'application ne répond pas.",
+    "Die Anwendung reagiert nicht.",
+    "La aplicación no responde.",
+    "L'applicazione non risponde."
+  ],
+  "Shell, legacy console, and UWP frame windows are unsupported.": [
+    "Окна оболочки, старой консоли и рамки UWP не поддерживаются.",
+    "Les fenêtres du shell, des anciennes consoles et des cadres UWP ne sont pas prises en charge.",
+    "Shell-, klassische Konsolen- und UWP-Rahmenfenster werden nicht unterstützt.",
+    "No se admiten ventanas del shell, consola antigua o marco UWP.",
+    "Finestre shell, console legacy e frame UWP non supportate."
+  ],
+  "Untitled windows are unsupported.": [
+    "Окна без заголовка не поддерживаются.",
+    "Les fenêtres sans titre ne sont pas prises en charge.",
+    "Fenster ohne Titel werden nicht unterstützt.",
+    "No se admiten ventanas sin título.",
+    "Finestre senza titolo non supportate."
+  ],
+  "Elevated application windows are intentionally unsupported.": [
+    "Окна приложений с повышенными правами не поддерживаются.",
+    "Les fenêtres d'applications élevées ne sont pas prises en charge.",
+    "Fenster mit erhöhten Rechten werden nicht unterstützt.",
+    "No se admiten ventanas de aplicaciones con privilegios elevados.",
+    "Finestre di applicazioni con privilegi elevati non supportate."
+  ],
+  "Cannot verify the window class. Its recovery entry was retained.": [
+    "Не удалось проверить класс окна. Запись восстановления сохранена.",
+    "Impossible de vérifier la classe. L'entrée de récupération est conservée.",
+    "Fensterklasse konnte nicht geprüft werden. Wiederherstellungseintrag beibehalten.",
+    "No se pudo verificar la clase. Se conservó el registro de recuperación.",
+    "Impossibile verificare la classe. Voce di ripristino conservata."
+  ],
+  "The window closed or its handle was reused. Refresh the list.": [
+    "Окно закрыто или его дескриптор переиспользован. Обновите список.",
+    "La fenêtre a été fermée ou son handle réutilisé. Actualisez la liste.",
+    "Fenster geschlossen oder Handle wiederverwendet. Liste aktualisieren.",
+    "La ventana se cerró o se reutilizó su identificador. Actualiza la lista.",
+    "La finestra è stata chiusa o il suo handle riutilizzato. Aggiorna l'elenco."
+  ],
+  "The application did not apply the window change within 300 ms. Close modal dialogs and retry; the recovery journal is retained.": [
+    "Приложение не изменило окно за 300 мс. Закройте диалоги и повторите; журнал восстановления сохранён.",
+    "L'application n'a pas modifié la fenêtre en 300 ms. Fermez les dialogues et réessayez ; le journal est conservé.",
+    "Anwendung hat Änderung nicht binnen 300 ms übernommen. Dialoge schließen und erneut versuchen; Journal bleibt erhalten.",
+    "La aplicación no aplicó el cambio en 300 ms. Cierra diálogos y reintenta; se conserva el diario.",
+    "L'applicazione non ha applicato la modifica entro 300 ms. Chiudi i dialoghi e riprova; il registro è conservato."
+  ],
+  "Close the application's modal dialog before switching or detaching its window.": [
+    "Закройте модальный диалог приложения перед переключением или отделением окна.",
+    "Fermez le dialogue modal de l'application avant de changer ou détacher sa fenêtre.",
+    "Modalen Dialog vor Wechseln oder Lösen des Fensters schließen.",
+    "Cierra el diálogo modal de la aplicación antes de cambiar o separar su ventana.",
+    "Chiudi il dialogo modale dell'applicazione prima di cambiare o separare la finestra."
+  ],
+  "The application did not respond within 150 ms.": [
+    "Приложение не ответило за 150 мс.",
+    "L'application n'a pas répondu en 150 ms.",
+    "Anwendung hat nicht binnen 150 ms geantwortet.",
+    "La aplicación no respondió en 150 ms.",
+    "L'applicazione non ha risposto entro 150 ms."
+  ],
+  "The grouped window is now cloaked or topmost. Return it to the current desktop and normal mode before switching.": [
+    "Окно теперь скрыто системой или поверх всех окон. Верните его на текущий рабочий стол в обычный режим.",
+    "La fenêtre est masquée ou toujours au premier plan. Rétablissez son bureau et son mode normaux avant de changer.",
+    "Fenster ist verborgen oder im Vordergrund fixiert. Vor dem Wechseln auf aktuellen Desktop und Normalmodus zurücksetzen.",
+    "La ventana está oculta o siempre encima. Devuélvela al escritorio actual y modo normal antes de cambiar.",
+    "La finestra è nascosta o sempre in primo piano. Riportala al desktop corrente e alla modalità normale prima di cambiare."
+  ],
+  "WindowTabs is already running. Open its manager from the taskbar.": [
+    "WindowTabs уже работает. Откройте менеджер на панели задач.",
+    "WindowTabs est déjà ouvert. Ouvrez son gestionnaire depuis la barre des tâches.",
+    "WindowTabs läuft bereits. Verwaltung über die Taskleiste öffnen.",
+    "WindowTabs ya está en ejecución. Abre el gestor desde la barra de tareas.",
+    "WindowTabs è già in esecuzione. Apri il gestore dalla barra delle applicazioni."
+  ],
+  "Unsupported or oversized settings file. Preserve it before starting a compatible version.": [
+    "Файл настроек не поддерживается или слишком большой. Сохраните его перед запуском совместимой версии.",
+    "Fichier de paramètres non pris en charge ou trop volumineux. Conservez-le avant de lancer une version compatible.",
+    "Einstellungsdatei nicht unterstützt oder zu groß. Vor dem Start einer kompatiblen Version aufbewahren.",
+    "Archivo de ajustes no compatible o demasiado grande. Consérvalo antes de iniciar una versión compatible.",
+    "File impostazioni non supportato o troppo grande. Conservalo prima di avviare una versione compatibile."
+  ],
+  "Unsupported recovery journal. Do not delete it until affected windows are restored.": [
+    "Журнал восстановления не поддерживается. Не удаляйте его до восстановления окон.",
+    "Journal de récupération non pris en charge. Ne le supprimez pas avant la restauration des fenêtres.",
+    "Wiederherstellungsjournal nicht unterstützt. Bis zur Fensterwiederherstellung nicht löschen.",
+    "Diario de recuperación no compatible. No lo borres hasta restaurar las ventanas.",
+    "Registro di ripristino non supportato. Non eliminarlo prima di ripristinare le finestre."
   ]
 }

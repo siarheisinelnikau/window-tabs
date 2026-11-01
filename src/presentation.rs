@@ -133,11 +133,21 @@ pub fn group_row(
     state: &str,
     language: crate::preferences::Language,
 ) -> String {
+    let noun = if language == crate::preferences::Language::Russian {
+        match (count % 100, count % 10) {
+            (11..=14, _) => "окон".to_owned(),
+            (_, 1) => "окно".to_owned(),
+            (_, 2..=4) => "окна".to_owned(),
+            _ => "окон".to_owned(),
+        }
+    } else {
+        crate::localization::text(language, if count == 1 { "window" } else { "windows" })
+    };
     format!(
         "{}\n{} {}{}",
         clean_row_title(name),
         count,
-        crate::localization::text(language, if count == 1 { "window" } else { "windows" }),
+        noun,
         if state.is_empty() {
             String::new()
         } else {
@@ -178,16 +188,16 @@ pub fn layout(
     let full = width - 2 * m;
     let action = height - 98;
     put(ID_BRAND, m + 56, 20, 320, 34);
-    put(ID_TAGLINE, m + 56, 58, full - 246, 24);
+    put(ID_TAGLINE, m + 56, 58, full - 306, 24);
     put(ID_NAV_GROUPS, m, 94, 124, 38);
     put(ID_NAV_SAVED, m + 132, 94, 238, 38);
     put(ID_NAV_SETTINGS, m + 378, 94, 176, 38);
     if recovery || (!matches!(page, Page::Picker(_)) && (page != Page::Groups || has_groups)) {
         put(
             if recovery { ID_RECOVER } else { ID_NEW },
-            width - m - 180,
+            width - m - 244,
             24,
-            180,
+            244,
             36,
         );
     }
@@ -202,14 +212,14 @@ pub fn layout(
                 put(ID_GROUPS, m, 182, left, height - 294);
                 put(ID_MORE, m, action, left, 34);
                 put(ID_LABEL_MEMBERS, right, 150, content, 24);
-                put(ID_NAME, right, 182, content - 132, 34);
-                put(ID_RENAME, width - m - 124, 182, 124, 34);
+                put(ID_NAME, right, 182, content - 184, 34);
+                put(ID_RENAME, width - m - 176, 182, 176, 34);
                 put(ID_MEMBERS, right, 230, content, height - 342);
                 for (id, x, w) in [
-                    (ID_SWITCH, 0, 112),
-                    (ID_LEFT, 120, 88),
-                    (ID_RIGHT, 216, 88),
-                    (ID_DETACH, 312, 116),
+                    (ID_SWITCH, 0, 136),
+                    (ID_LEFT, 144, 112),
+                    (ID_RIGHT, 264, 112),
+                    (ID_DETACH, 384, 144),
                 ] {
                     put(id, right + x, action, w, 34);
                 }
@@ -223,20 +233,20 @@ pub fn layout(
             }
         }
         Page::Picker(add) => {
-            put(ID_LABEL_WINDOWS, m, 150, full - 180, 26);
-            put(ID_REFRESH, width - m - 160, 146, 160, 34);
+            put(ID_LABEL_WINDOWS, m, 150, full - 232, 26);
+            put(ID_REFRESH, width - m - 216, 146, 216, 34);
             put(ID_HELP, m, 190, full, 30);
             let top = if add.is_none() {
-                put(ID_LABEL_NAME, m, 236, 100, 26);
-                put(ID_NAME, m + 110, 230, full - 110, 34);
+                put(ID_LABEL_NAME, m, 236, 132, 26);
+                put(ID_NAME, m + 142, 230, full - 142, 34);
                 280
             } else {
                 234
             };
             put(ID_WINDOWS, m, top, full, action - top - 16);
-            put(ID_PICK_COUNT, m, action + 5, full - 300, 24);
-            put(ID_CANCEL, width - m - 282, action, 104, 34);
-            put(ID_CREATE, width - m - 168, action, 168, 34);
+            put(ID_PICK_COUNT, m, action + 5, full - 316, 24);
+            put(ID_CANCEL, width - m - 298, action, 104, 34);
+            put(ID_CREATE, width - m - 184, action, 184, 34);
         }
         Page::Saved => {
             put(ID_LABEL_SAVED, m, 150, full, 26);
@@ -248,8 +258,8 @@ pub fn layout(
                 put(ID_EMPTY, m + 122, 266, full - 146, 34);
                 put(ID_EMPTY_HELP, m + 122, 310, full - 146, 84);
             }
-            put(ID_RESTORE, m, action, 160, 34);
-            put(ID_DELETE, m + 172, action, 160, 34);
+            put(ID_RESTORE, m, action, 216, 34);
+            put(ID_DELETE, m + 228, action, 216, 34);
         }
         Page::Settings => {
             put(ID_LABEL_SETTINGS, m, 150, full, 28);
@@ -334,6 +344,118 @@ mod tests {
             assert!(!cache.changed(ID_GROUPS, vec!["Work".into()]));
         }
         assert!(cache.changed(ID_GROUPS, vec!["Work".into(), "Research".into()]));
+    }
+    #[test]
+    fn translated_metadata_keeps_group_names_and_correct_russian_counts() {
+        use crate::preferences::Language;
+        assert_eq!(
+            group_row("Saved", 2, "Saved", Language::French),
+            "Saved\n2 fenêtres · Enregistré"
+        );
+        for (count, noun) in [
+            (1, "окно"),
+            (2, "окна"),
+            (5, "окон"),
+            (11, "окон"),
+            (21, "окно"),
+            (24, "окна"),
+        ] {
+            assert_eq!(
+                group_row("Settings", count, "", Language::Russian),
+                format!("Settings\n{count} {noun}")
+            );
+        }
+    }
+    #[cfg(windows)]
+    #[test]
+    fn translated_action_captions_fit_native_font_at_minimum_size() {
+        use windows_sys::{
+            Win32::{Foundation::SIZE, Graphics::Gdi::*},
+            core::w,
+        };
+        let captions = [
+            (ID_NAV_GROUPS, "Groups"),
+            (ID_NAV_SAVED, "Saved groups"),
+            (ID_NAV_SETTINGS, "Settings"),
+            (ID_NEW, "New group"),
+            (ID_RECOVER, "Recover windows"),
+            (ID_MORE, "Group actions…"),
+            (ID_RENAME, "Rename"),
+            (ID_SWITCH, "Switch"),
+            (ID_LEFT, "Left"),
+            (ID_RIGHT, "Right"),
+            (ID_DETACH, "Detach"),
+            (ID_REFRESH, "Refresh windows"),
+            (ID_CANCEL, "Back"),
+            (ID_CREATE, "Create group"),
+            (ID_CREATE, "Add windows"),
+            (ID_RESTORE, "Restore saved"),
+            (ID_DELETE, "Delete saved"),
+            (ID_CHECK, "Check for updates"),
+            (ID_INSTALL, "Download and install"),
+        ];
+        // A memory DC measures the actual native font without opening an app or discovering windows.
+        unsafe {
+            let dc = CreateCompatibleDC(std::ptr::null_mut());
+            assert!(!dc.is_null());
+            let font = CreateFontW(
+                -15,
+                0,
+                0,
+                0,
+                FW_NORMAL as i32,
+                0,
+                0,
+                0,
+                DEFAULT_CHARSET as u32,
+                OUT_DEFAULT_PRECIS as u32,
+                CLIP_DEFAULT_PRECIS as u32,
+                CLEARTYPE_QUALITY as u32,
+                DEFAULT_PITCH as u32,
+                w!("Segoe UI"),
+            );
+            assert!(!font.is_null());
+            let previous = SelectObject(dc, font);
+            let mut failures = vec![];
+            for language in crate::preferences::Language::ALL {
+                for page in [
+                    Page::Groups,
+                    Page::Picker(None),
+                    Page::Saved,
+                    Page::Settings,
+                ] {
+                    for recovery in [false, true] {
+                        for control in layout(page, MIN_WIDTH, MIN_HEIGHT, true, true, recovery) {
+                            for (_, source) in captions.iter().filter(|(id, _)| *id == control.id) {
+                                let translated = crate::localization::text(language, source);
+                                let text: Vec<u16> = translated.encode_utf16().collect();
+                                let mut size = SIZE::default();
+                                assert_ne!(
+                                    GetTextExtentPoint32W(
+                                        dc,
+                                        text.as_ptr(),
+                                        text.len() as i32,
+                                        &mut size
+                                    ),
+                                    0
+                                );
+                                if size.cx > control.width - 45 {
+                                    failures.push(format!(
+                                        "{language:?}: {source}: {} > {}",
+                                        size.cx,
+                                        control.width - 45
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            SelectObject(dc, previous);
+            DeleteObject(font);
+            DeleteDC(dc);
+            assert!(failures.is_empty(), "{}", failures.join("\n"));
+        }
     }
     #[test]
     fn display_rows_keep_metadata_separate_without_changing_window_titles() {

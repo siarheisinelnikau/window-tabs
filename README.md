@@ -2,7 +2,7 @@
 
 WindowTabs groups existing, ordinary Windows application windows behind a separate native tab strip. Select related windows, switch between them in one place, and restore their original placements when finished.
 
-**Version 0.1.0 is an unpublished developer preview.** The Windows source builds and synthetic tests are available; interactive desktop compatibility has not yet been validated. No repository or release was published during implementation.
+**Version 0.2.0** adds six interface languages and saved light/dark themes. The Windows source builds and synthetic tests are available; interactive desktop compatibility and live update installation still require validation.
 
 The manager separates **Groups**, **Saved groups**, and **Settings**. Colored window-type badges, labeled action icons, and a soft violet palette help identify windows and everyday actions. Creating a group opens a focused window picker; everyday switching stays in the small tab strip. [Design and rendering notes](docs/DESIGN.md) explain the workflow and verification scope.
 
@@ -23,7 +23,7 @@ WindowTabs is an independent MIT-licensed implementation. The [Groupy product](h
 
 Target: Windows 10 version 1703 or later / Windows 11, x64, ordinary unelevated desktop session. Compatibility on actual desktops remains pending. Run as a normal user; the application never requests elevation. The package uses the static MSVC runtime and Windows system libraries, with no WebView or separate runtime installation.
 
-Build with an existing Rust MSVC toolchain and Visual C++ linker / Windows SDK. Keep the local `rust-auto-updator` workspace beside this repository (`../rust-auto-updator/crates/rust-auto-updator`); it is required for source builds and has not been published by this session. Standalone CI checkouts must provision that same sibling before verification. Rust 1.96.1 was used for local verification; the declared minimum is 1.95, which was not separately tested.
+Build with an existing Rust MSVC toolchain and Visual C++ linker / Windows SDK. Keep the local `rust-auto-updator` workspace beside this repository (`../rust-auto-updator/crates/rust-auto-updator`); it is required for source builds. Standalone CI checkouts use the pinned revision in `scripts/provision-shared-updater.ps1` before verification. Rust 1.96.1 was used for local verification; the declared minimum is 1.95, which was not separately tested.
 
 ```powershell
 cd E:\work\github\window-tabs
@@ -31,7 +31,7 @@ cd E:\work\github\window-tabs
 .\scripts\package.ps1 -Offline
 ```
 
-Remove `-Offline` when dependencies are not already cached. Cargo is limited to two jobs and the repository-local `target` directory. The package is `dist\v0.1.0\WindowTabs-v0.1.0.exe`, accompanied by `SHA256SUMS.txt`, the license, and [third-party notices](THIRD_PARTY_NOTICES.md). Packaging inspects the PE architecture, GUI subsystem, embedded manifest and application icon, and DLL imports without running the EXE. A resource-only native proof is available through `scripts/inspect-icons.ps1`; it loads the packaged EXE as data, validates native sizes and alpha, and saves `DrawIconEx` samples on light/dark backgrounds without starting the app. The original logo is in `assets/window-tabs.svg`; `scripts/generate-icon.ps1` rebuilds its multi-resolution ICO with Windows System.Drawing. The build embeds the checked-in ICO using the Windows SDK resource compiler.
+Remove `-Offline` when dependencies are not already cached. Cargo is limited to two jobs and the repository-local `target` directory. The package is `dist\v0.2.0\WindowTabs-v0.2.0.exe`, accompanied by `SHA256SUMS.txt`, the license, and [third-party notices](THIRD_PARTY_NOTICES.md). Packaging inspects the PE architecture, GUI subsystem, embedded manifest and application icon, and DLL imports without running the EXE. A resource-only native proof is available through `scripts/inspect-icons.ps1`; it loads the packaged EXE as data, validates native sizes and alpha, and saves `DrawIconEx` samples on light/dark backgrounds without starting the app. The original logo is in `assets/window-tabs.svg`; `scripts/generate-icon.ps1` rebuilds its multi-resolution ICO with Windows System.Drawing. The build embeds the checked-in ICO using the Windows SDK resource compiler.
 
 ## Use after interactive validation
 
@@ -46,11 +46,14 @@ The manager stays on the taskbar; there is no tray mode. A second instance repor
 
 ## Settings, privacy, and updates
 
+Open **Settings** and choose **Language** to switch between **English**, **Русский**, **Français**, **Deutsch**, **Español**, and **Italiano**. The **Theme** button switches between **Light** and **Dark**. Both preferences are saved immediately by the background worker and apply without restarting, including the manager, window lists, tab strips, and their action menus. Existing installations keep English and the light theme until changed. Windows high-contrast colors take precedence. Window titles, saved group names, application paths, and raw OS/network diagnostic details keep their original text.
+
+
 Own data lives in `%LOCALAPPDATA%\WindowTabs\settings.json` and `recovery.json`. Settings contain saved names, executable paths, window classes, and titles. Recovery also includes process creation times, HWNDs, placements, and visibility. These local files are not encrypted; normal operation does not capture documents or screenshots and uploads no window data. The developer-only capture mode below renders synthetic fixtures into a requested local file. Do not remove a nonempty recovery journal before recovering affected windows.
 
 A valid recovery journal remains usable if settings are corrupt or from an unsupported schema. WindowTabs preserves the settings file and enters a recovery-only mode with startup network checks disabled; recover windows, then repair settings and restart. Older journals without saved physical monitor coordinates remain readable. When the original monitor is gone, recovery chooses reachable normal bounds and waits for that placement instead of accepting an unrelated visible window state.
 
-The **Settings / Updates** area displays the installed version. Startup checking is enabled by default and uses a separate bounded worker. Turning **Check for updates on startup** off prevents startup update requests on subsequent launches, and manual checking remains available. Errors and no-update results stay in the settings area without popup dialogs. The only normal network operation is checking/downloading updates from the [planned canonical repository](https://github.com/siarheisinelnikau/window-tabs); an unavailable repository/release is shown as unavailable, not “up to date.”
+The **Settings** area displays the installed version. Startup checking is enabled by default and uses a separate bounded worker. Turning **Check for updates on startup** off prevents startup update requests on subsequent launches, and manual checking remains available. Errors and no-update results stay in the settings area without popup dialogs. The only normal network operation is checking/downloading updates from the [canonical repository](https://github.com/siarheisinelnikau/window-tabs); an unavailable repository/release is shown as unavailable, not “up to date.”
 
 Installation requires clicking **Download and install** and completing any previous-session recovery first. The shared `rust-auto-updator` core downloads stable `WindowTabs-vVERSION.exe` plus `SHA256SUMS.txt`, checks byte length, SHA-256, x64 GUI PE headers, section bounds and executable entry point, and prepares a unique `.window-tabs-update-*` staging folder beside the installed EXE. WindowTabs restores all groups and saves its journal before handing off installation. A helper-launch failure keeps the manager open and recreates its window worker so the user can retry.
 
@@ -66,6 +69,8 @@ Local noninteractive results and the remaining manual matrix are in [docs/VALIDA
 
 ## Screenshots
 
+The images below document **version 0.1.0**; the language/theme controls and dark palette introduced in 0.2.0 have not been captured because this pass retains the repository’s code-only/no-launch restriction. Updated main and Settings screenshots, translated-label clipping, native theme details, and runtime rendering measurements remain pending.
+
 These are real application-generated client-area images from the packaged EXE, using the same native Win32 controls and GDI rendering as normal operation. The window names are synthetic fixtures. No visible windows, user applications/settings, screen capture, or computer use were involved. They establish static layout, not successful grouping on a real desktop.
 
 ![Native WindowTabs manager with a synthetic populated group, 900 by 640 pixels at 96 DPI](docs/screenshots/groups.png)
@@ -77,7 +82,7 @@ Additional reviewed states: [window picker](docs/screenshots/picker.png), [empty
 To reproduce the isolated render-save-exit diagnostic into a fresh output directory:
 
 ```powershell
-.\scripts\capture-ui.ps1 -Executable .\dist\v0.1.0\WindowTabs-v0.1.0.exe -OutputDirectory .\target\new-ui-captures
+.\scripts\capture-ui.ps1 -Executable .\dist\v0.2.0\WindowTabs-v0.2.0.exe -OutputDirectory .\target\new-ui-captures
 ```
 
 The script imposes a 20-second process timeout; each invocation renders one composite image and exits. It never activates an existing instance or starts discovery, event hooks, update requests, or persistence. Captures of actual grouped desktop windows/tab strips and interactive keyboard/focus/DPI testing remain pending.

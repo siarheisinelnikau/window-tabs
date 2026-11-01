@@ -193,6 +193,31 @@ fn settings_opt_out_survives_atomic_replacement() {
     assert!(!fixture.0.join("settings.json.tmp").exists());
 }
 #[test]
+fn legacy_settings_preserve_templates_and_update_opt_out_with_new_preferences() {
+    use window_tabs::preferences::{Language, Theme};
+    let fixture = Fixture::new();
+    let store = Store::new(fixture.0.clone());
+    let templates = json!([{"name":"Saved","members":[
+        {"executable":"editor.exe","class":"Fixture","title":"Settings"},
+        {"executable":"browser.exe","class":"Fixture","title":"Updates"}
+    ]}]);
+    let legacy = json!({"schema": 1, "check_on_startup": false, "templates": templates});
+    storage::atomic_json(&fixture.0.join("settings.json"), &legacy).unwrap();
+    let mut settings = store.settings().unwrap();
+    assert_eq!(settings.language, Language::English);
+    assert_eq!(settings.theme, Theme::Light);
+    assert!(!settings.check_on_startup);
+    for language in Language::ALL {
+        settings.language = language;
+        settings.theme = Theme::Dark;
+        store.save_settings(&settings).unwrap();
+        let loaded = store.settings().unwrap();
+        assert_eq!((loaded.language, loaded.theme), (language, Theme::Dark));
+        assert!(!loaded.check_on_startup);
+        assert_eq!(serde_json::to_value(loaded.templates).unwrap(), templates);
+    }
+}
+#[test]
 fn malformed_and_future_settings_are_preserved_and_reported() {
     let fixture = Fixture::new();
     let store = Store::new(fixture.0.clone());
