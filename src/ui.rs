@@ -400,7 +400,12 @@ pub fn capture() -> Result<()> {
         let bgra =
             std::slice::from_raw_parts(bitmap.bits as *const u8, (width * height * 4) as usize);
         let mut rgba = vec![0u8; bgra.len()];
-        for (from, to) in bgra.chunks_exact(4).zip(rgba.chunks_exact_mut(4)) {
+        for (from, to) in bgra
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(rgba.as_chunks_mut::<4>().0.iter_mut())
+        {
             to.copy_from_slice(&[from[2], from[1], from[0], 255]);
         }
         let temporary = path.with_extension("png.tmp");
