@@ -1,0 +1,919 @@
+{
+  "Language": [
+    "Язык",
+    "Langue",
+    "Sprache",
+    "Idioma",
+    "Lingua"
+  ],
+  "Theme": [
+    "Тема",
+    "Thème",
+    "Design",
+    "Tema",
+    "Tema"
+  ],
+  "Light": [
+    "Светлая",
+    "Clair",
+    "Hell",
+    "Claro",
+    "Chiaro"
+  ],
+  "Dark": [
+    "Тёмная",
+    "Sombre",
+    "Dunkel",
+    "Oscuro",
+    "Scuro"
+  ],
+  "Choose windows": [
+    "Выбор окон",
+    "Choisir les fenêtres",
+    "Fenster auswählen",
+    "Elegir ventanas",
+    "Scegli finestre"
+  ],
+  "Your groups": [
+    "Ваши группы",
+    "Vos groupes",
+    "Ihre Gruppen",
+    "Tus grupos",
+    "I tuoi gruppi"
+  ],
+  "Windows in this group": [
+    "Окна в группе",
+    "Fenêtres du groupe",
+    "Fenster dieser Gruppe",
+    "Ventanas del grupo",
+    "Finestre del gruppo"
+  ],
+  "Group name": [
+    "Имя группы",
+    "Nom du groupe",
+    "Gruppenname",
+    "Nombre del grupo",
+    "Nome del gruppo"
+  ],
+  "Saved groups": [
+    "Сохранённые группы",
+    "Groupes enregistrés",
+    "Gespeicherte Gruppen",
+    "Grupos guardados",
+    "Gruppi salvati"
+  ],
+  "Updates": [
+    "Обновления",
+    "Mises à jour",
+    "Updates",
+    "Actualizaciones",
+    "Aggiornamenti"
+  ],
+  "Keep related windows together.": [
+    "Держите связанные окна вместе.",
+    "Gardez les fenêtres associées ensemble.",
+    "Zusammengehörige Fenster gruppieren.",
+    "Mantén juntas las ventanas relacionadas.",
+    "Tieni insieme le finestre correlate."
+  ],
+  "No groups yet": [
+    "Пока нет групп",
+    "Aucun groupe pour le moment",
+    "Noch keine Gruppen",
+    "Todavía no hay grupos",
+    "Nessun gruppo ancora"
+  ],
+  "{} windows selected": [
+    "Выбрано окон: {}",
+    "{} fenêtres sélectionnées",
+    "{} Fenster ausgewählt",
+    "{} ventanas seleccionadas",
+    "{} finestre selezionate"
+  ],
+  "Grouped windows illustration": [
+    "Иллюстрация группы окон",
+    "Illustration de fenêtres groupées",
+    "Abbildung gruppierter Fenster",
+    "Ilustración de ventanas agrupadas",
+    "Illustrazione di finestre raggruppate"
+  ],
+  "My workspace": [
+    "Моя рабочая группа",
+    "Mon espace de travail",
+    "Mein Arbeitsbereich",
+    "Mi espacio de trabajo",
+    "Il mio spazio di lavoro"
+  ],
+  "Groups": [
+    "Группы",
+    "Groupes",
+    "Gruppen",
+    "Grupos",
+    "Gruppi"
+  ],
+  "Settings": [
+    "Настройки",
+    "Paramètres",
+    "Einstellungen",
+    "Ajustes",
+    "Impostazioni"
+  ],
+  "New group": [
+    "Новая группа",
+    "Nouveau groupe",
+    "Neue Gruppe",
+    "Nuevo grupo",
+    "Nuovo gruppo"
+  ],
+  "Back": [
+    "Назад",
+    "Retour",
+    "Zurück",
+    "Volver",
+    "Indietro"
+  ],
+  "Group actions…": [
+    "Действия с группой…",
+    "Actions du groupe…",
+    "Gruppenaktionen…",
+    "Acciones del grupo…",
+    "Azioni del gruppo…"
+  ],
+  "Refresh windows": [
+    "Обновить окна",
+    "Actualiser",
+    "Fenster aktualisieren",
+    "Actualizar ventanas",
+    "Aggiorna finestre"
+  ],
+  "Create group": [
+    "Создать группу",
+    "Créer un groupe",
+    "Gruppe erstellen",
+    "Crear grupo",
+    "Crea gruppo"
+  ],
+  "Add to group": [
+    "Добавить в группу",
+    "Ajouter au groupe",
+    "Zur Gruppe hinzufügen",
+    "Añadir al grupo",
+    "Aggiungi al gruppo"
+  ],
+  "Rename": [
+    "Переименовать",
+    "Renommer",
+    "Umbenennen",
+    "Renombrar",
+    "Rinomina"
+  ],
+  "Switch": [
+    "Переключить",
+    "Activer",
+    "Wechseln",
+    "Cambiar",
+    "Attiva"
+  ],
+  "Left": [
+    "Влево",
+    "Gauche",
+    "Links",
+    "Izquierda",
+    "Sinistra"
+  ],
+  "Right": [
+    "Вправо",
+    "Droite",
+    "Rechts",
+    "Derecha",
+    "Destra"
+  ],
+  "Detach": [
+    "Отделить",
+    "Détacher",
+    "Lösen",
+    "Separar",
+    "Separa"
+  ],
+  "Close group": [
+    "Закрыть группу",
+    "Fermer le groupe",
+    "Gruppe schließen",
+    "Cerrar grupo",
+    "Chiudi gruppo"
+  ],
+  "Save group": [
+    "Сохранить группу",
+    "Enregistrer",
+    "Gruppe speichern",
+    "Guardar grupo",
+    "Salva gruppo"
+  ],
+  "Restore saved": [
+    "Восстановить",
+    "Restaurer",
+    "Wiederherstellen",
+    "Restaurar",
+    "Ripristina"
+  ],
+  "Delete saved": [
+    "Удалить",
+    "Supprimer",
+    "Löschen",
+    "Eliminar",
+    "Elimina"
+  ],
+  "Recover windows": [
+    "Восстановить окна",
+    "Récupérer les fenêtres",
+    "Fenster wiederherstellen",
+    "Recuperar ventanas",
+    "Recupera finestre"
+  ],
+  "Check for updates": [
+    "Проверить обновления",
+    "Rechercher des mises à jour",
+    "Nach Updates suchen",
+    "Buscar actualizaciones",
+    "Cerca aggiornamenti"
+  ],
+  "Download and install": [
+    "Скачать и установить",
+    "Télécharger et installer",
+    "Herunterladen und installieren",
+    "Descargar e instalar",
+    "Scarica e installa"
+  ],
+  "Check for updates on startup": [
+    "Проверять обновления при запуске",
+    "Rechercher des mises à jour au démarrage",
+    "Beim Start nach Updates suchen",
+    "Buscar actualizaciones al iniciar",
+    "Cerca aggiornamenti all'avvio"
+  ],
+  "Loading eligible windows…": [
+    "Загрузка доступных окон…",
+    "Chargement des fenêtres compatibles…",
+    "Geeignete Fenster werden geladen…",
+    "Cargando ventanas compatibles…",
+    "Caricamento delle finestre compatibili…"
+  ],
+  "Installed version: {}. Updates have not been checked.": [
+    "Установлена версия: {}. Обновления ещё не проверялись.",
+    "Version installée : {}. Aucune recherche effectuée.",
+    "Installierte Version: {}. Updates wurden noch nicht geprüft.",
+    "Versión instalada: {}. No se han buscado actualizaciones.",
+    "Versione installata: {}. Aggiornamenti non ancora verificati."
+  ],
+  "Select windows to add to this group. Use Ctrl or Shift to select several.": [
+    "Выберите окна для добавления. Ctrl или Shift позволяет выбрать несколько.",
+    "Choisissez les fenêtres à ajouter. Utilisez Ctrl ou Maj pour la sélection multiple.",
+    "Fenster zum Hinzufügen auswählen. Mit Strg oder Umschalt mehrere auswählen.",
+    "Elige las ventanas que quieres añadir. Usa Ctrl o Mayús para seleccionar varias.",
+    "Scegli le finestre da aggiungere. Usa Ctrl o Maiusc per la selezione multipla."
+  ],
+  "Select at least two open windows. Use Ctrl or Shift to select several.": [
+    "Выберите хотя бы два окна. Для множественного выбора используйте Ctrl или Shift.",
+    "Sélectionnez au moins deux fenêtres ouvertes avec Ctrl ou Maj.",
+    "Mindestens zwei offene Fenster mit Strg oder Umschalt auswählen.",
+    "Selecciona al menos dos ventanas abiertas con Ctrl o Mayús.",
+    "Seleziona almeno due finestre aperte con Ctrl o Maiusc."
+  ],
+  "Restore a saved group using windows that are already open with the same titles.": [
+    "Восстановите группу из уже открытых окон с теми же заголовками.",
+    "Restaurez un groupe avec les fenêtres déjà ouvertes portant les mêmes titres.",
+    "Gespeicherte Gruppe aus offenen Fenstern mit gleichen Titeln wiederherstellen.",
+    "Restaura un grupo con ventanas ya abiertas que tengan los mismos títulos.",
+    "Ripristina un gruppo usando finestre già aperte con gli stessi titoli."
+  ],
+  "Keep WindowTabs up to date. Downloads and installation start only when you choose them.": [
+    "Обновляйте WindowTabs. Скачивание и установка начинаются только по вашему выбору.",
+    "Gardez WindowTabs à jour. Le téléchargement et l'installation nécessitent votre action.",
+    "WindowTabs aktuell halten. Download und Installation beginnen nur auf Ihren Wunsch.",
+    "Mantén WindowTabs actualizado. La descarga e instalación solo empiezan cuando lo decides.",
+    "Mantieni aggiornato WindowTabs. Download e installazione iniziano solo su tua richiesta."
+  ],
+  "No saved groups yet": [
+    "Нет сохранённых групп",
+    "Aucun groupe enregistré",
+    "Noch keine gespeicherten Gruppen",
+    "No hay grupos guardados",
+    "Nessun gruppo salvato"
+  ],
+  "Open a group's actions and choose Save group. Its window order and titles will be ready to restore next time.": [
+    "Откройте действия группы и сохраните её. Порядок окон и заголовки сохранятся для восстановления.",
+    "Ouvrez les actions du groupe et enregistrez-le. L'ordre et les titres seront conservés.",
+    "Gruppe über die Gruppenaktionen speichern. Fensterreihenfolge und Titel bleiben erhalten.",
+    "Abre las acciones del grupo y guárdalo. Se conservarán el orden y los títulos.",
+    "Apri le azioni del gruppo e salvalo. Ordine e titoli saranno conservati."
+  ],
+  "A little less window switching": [
+    "Меньше переключений между окнами",
+    "Moins de changements de fenêtre",
+    "Weniger Fensterwechsel",
+    "Menos cambios de ventana",
+    "Meno passaggi tra finestre"
+  ],
+  "Create a group from two or more open windows. Your windows stay independent, with a small tab strip to switch between them.": [
+    "Объедините два или больше окон. Они останутся независимыми, а переключаться можно будет вкладками.",
+    "Regroupez au moins deux fenêtres. Elles restent indépendantes et se sélectionnent par onglets.",
+    "Zwei oder mehr Fenster gruppieren. Sie bleiben unabhängig und lassen sich über eine Tab-Leiste wechseln.",
+    "Agrupa dos o más ventanas. Seguirán siendo independientes y podrás cambiar entre ellas con pestañas.",
+    "Raggruppa almeno due finestre. Restano indipendenti e puoi alternarle con una barra di schede."
+  ],
+  "Create a group from two or more open windows. Switch between them from a small tab strip above the active window.": [
+    "Создайте группу из двух или более окон. Переключайтесь вкладками над активным окном.",
+    "Créez un groupe avec au moins deux fenêtres et passez de l'une à l'autre avec les onglets.",
+    "Mindestens zwei Fenster gruppieren und über die Tab-Leiste wechseln.",
+    "Crea un grupo con dos o más ventanas y alterna entre ellas con pestañas.",
+    "Crea un gruppo con almeno due finestre e alternale tramite le schede."
+  ],
+  "Let's recover your windows": [
+    "Восстановим ваши окна",
+    "Récupérons vos fenêtres",
+    "Fenster wiederherstellen",
+    "Recuperemos tus ventanas",
+    "Recuperiamo le tue finestre"
+  ],
+  "WindowTabs was interrupted while windows were grouped. Recover their original positions before starting a new workspace.": [
+    "Работа WindowTabs прервалась. Восстановите исходные позиции окон перед созданием новой группы.",
+    "WindowTabs a été interrompu. Récupérez les positions d'origine avant de créer un nouvel espace.",
+    "WindowTabs wurde unterbrochen. Vor einem neuen Arbeitsbereich die ursprünglichen Positionen wiederherstellen.",
+    "WindowTabs se interrumpió. Recupera las posiciones originales antes de crear un nuevo espacio.",
+    "WindowTabs è stato interrotto. Recupera le posizioni originali prima di creare un nuovo spazio."
+  ],
+  "Add windows": [
+    "Добавить окна",
+    "Ajouter des fenêtres",
+    "Fenster hinzufügen",
+    "Añadir ventanas",
+    "Aggiungi finestre"
+  ],
+  "Startup checks are optional. Manual checking stays available.": [
+    "Проверку при запуске можно отключить. Ручная проверка всегда доступна.",
+    "La recherche au démarrage est facultative. La recherche manuelle reste disponible.",
+    "Startprüfungen sind optional. Manuelle Prüfungen bleiben verfügbar.",
+    "La búsqueda al iniciar es opcional. Siempre puedes buscar manualmente.",
+    "Il controllo all'avvio è facoltativo. Quello manuale resta disponibile."
+  ],
+  "Saved groups match open windows; they do not launch applications.": [
+    "Сохранённые группы используют открытые окна и не запускают приложения.",
+    "Les groupes enregistrés utilisent les fenêtres ouvertes sans lancer d'applications.",
+    "Gespeicherte Gruppen verwenden offene Fenster und starten keine Anwendungen.",
+    "Los grupos guardados usan ventanas abiertas y no inician aplicaciones.",
+    "I gruppi salvati usano finestre aperte senza avviare applicazioni."
+  ],
+  "Ungrouping keeps your applications open and restores their original positions.": [
+    "Разгруппировка оставляет приложения открытыми и восстанавливает исходные позиции.",
+    "Dégrouper laisse les applications ouvertes et rétablit leurs positions d'origine.",
+    "Beim Auflösen bleiben Anwendungen offen und ihre Positionen werden wiederhergestellt.",
+    "Desagrupar mantiene las aplicaciones abiertas y restaura sus posiciones originales.",
+    "Separare il gruppo lascia aperte le applicazioni e ripristina le posizioni originali."
+  ],
+  "Select a group to manage its windows, or choose New group.": [
+    "Выберите группу для управления окнами или создайте новую.",
+    "Choisissez un groupe à gérer ou créez-en un nouveau.",
+    "Gruppe zur Fensterverwaltung auswählen oder eine neue Gruppe erstellen.",
+    "Elige un grupo para gestionar sus ventanas o crea uno nuevo.",
+    "Scegli un gruppo da gestire o creane uno nuovo."
+  ],
+  "Select a saved group first.": [
+    "Сначала выберите сохранённую группу.",
+    "Sélectionnez d'abord un groupe enregistré.",
+    "Zuerst eine gespeicherte Gruppe auswählen.",
+    "Selecciona primero un grupo guardado.",
+    "Seleziona prima un gruppo salvato."
+  ],
+  "Select an active group first.": [
+    "Сначала выберите активную группу.",
+    "Sélectionnez d'abord un groupe actif.",
+    "Zuerst eine aktive Gruppe auswählen.",
+    "Selecciona primero un grupo activo.",
+    "Seleziona prima un gruppo attivo."
+  ],
+  "Needs recovery": [
+    "Нужно восстановление",
+    "Récupération requise",
+    "Wiederherstellung nötig",
+    "Requiere recuperación",
+    "Ripristino necessario"
+  ],
+  "Minimized": [
+    "Свёрнута",
+    "Réduit",
+    "Minimiert",
+    "Minimizado",
+    "Ridotto a icona"
+  ],
+  "Saved": [
+    "Сохранена",
+    "Enregistré",
+    "Gespeichert",
+    "Guardado",
+    "Salvato"
+  ],
+  "window": [
+    "окно",
+    "fenêtre",
+    "Fenster",
+    "ventana",
+    "finestra"
+  ],
+  "windows": [
+    "окон",
+    "fenêtres",
+    "Fenster",
+    "ventanas",
+    "finestre"
+  ],
+  "Active window": [
+    "Активное окно",
+    "Fenêtre active",
+    "Aktives Fenster",
+    "Ventana activa",
+    "Finestra attiva"
+  ],
+  "Application": [
+    "Приложение",
+    "Application",
+    "Anwendung",
+    "Aplicación",
+    "Applicazione"
+  ],
+  "Some windows need recovery from your previous session. Choose Recover windows before creating groups.": [
+    "Восстановите окна предыдущей сессии перед созданием групп.",
+    "Certaines fenêtres doivent être récupérées avant de créer des groupes.",
+    "Fenster der letzten Sitzung vor dem Erstellen von Gruppen wiederherstellen.",
+    "Recupera las ventanas de la sesión anterior antes de crear grupos.",
+    "Recupera le finestre della sessione precedente prima di creare gruppi."
+  ],
+  "Add windows…": [
+    "Добавить окна…",
+    "Ajouter des fenêtres…",
+    "Fenster hinzufügen…",
+    "Añadir ventanas…",
+    "Aggiungi finestre…"
+  ],
+  "Ungroup and restore windows": [
+    "Разгруппировать и восстановить окна",
+    "Dégrouper et restaurer les fenêtres",
+    "Gruppe auflösen und Fenster wiederherstellen",
+    "Desagrupar y restaurar ventanas",
+    "Separa gruppo e ripristina finestre"
+  ],
+  "Previous tab": [
+    "Предыдущая вкладка",
+    "Onglet précédent",
+    "Vorheriger Tab",
+    "Pestaña anterior",
+    "Scheda precedente"
+  ],
+  "Next tab": [
+    "Следующая вкладка",
+    "Onglet suivant",
+    "Nächster Tab",
+    "Pestaña siguiente",
+    "Scheda successiva"
+  ],
+  "Move active tab left": [
+    "Сдвинуть вкладку влево",
+    "Déplacer l'onglet à gauche",
+    "Aktiven Tab nach links",
+    "Mover pestaña a la izquierda",
+    "Sposta scheda a sinistra"
+  ],
+  "Move active tab right": [
+    "Сдвинуть вкладку вправо",
+    "Déplacer l'onglet à droite",
+    "Aktiven Tab nach rechts",
+    "Mover pestaña a la derecha",
+    "Sposta scheda a destra"
+  ],
+  "Detach active tab": [
+    "Отделить активную вкладку",
+    "Détacher l'onglet actif",
+    "Aktiven Tab lösen",
+    "Separar pestaña activa",
+    "Separa scheda attiva"
+  ],
+  "Show manager": [
+    "Открыть менеджер",
+    "Afficher le gestionnaire",
+    "Verwaltung anzeigen",
+    "Mostrar gestor",
+    "Mostra gestore"
+  ],
+  "Close group and restore windows": [
+    "Закрыть группу и восстановить окна",
+    "Fermer le groupe et restaurer les fenêtres",
+    "Gruppe schließen und Fenster wiederherstellen",
+    "Cerrar grupo y restaurar ventanas",
+    "Chiudi gruppo e ripristina finestre"
+  ],
+  "Error: {}": [
+    "Ошибка: {}",
+    "Erreur : {}",
+    "Fehler: {}",
+    "Error: {}",
+    "Errore: {}"
+  ],
+  "Appearance preferences saved.": [
+    "Настройки оформления сохранены.",
+    "Préférences d'apparence enregistrées.",
+    "Darstellungseinstellungen gespeichert.",
+    "Preferencias de apariencia guardadas.",
+    "Preferenze di aspetto salvate."
+  ],
+  "Update preference saved.": [
+    "Настройка обновлений сохранена.",
+    "Préférence de mise à jour enregistrée.",
+    "Update-Einstellung gespeichert.",
+    "Preferencia de actualización guardada.",
+    "Preferenza aggiornamenti salvata."
+  ],
+  "Select a saved group.": [
+    "Выберите сохранённую группу.",
+    "Sélectionnez un groupe enregistré.",
+    "Gespeicherte Gruppe auswählen.",
+    "Selecciona un grupo guardado.",
+    "Seleziona un gruppo salvato."
+  ],
+  "Select an active group.": [
+    "Выберите активную группу.",
+    "Sélectionnez un groupe actif.",
+    "Aktive Gruppe auswählen.",
+    "Selecciona un grupo activo.",
+    "Seleziona un gruppo attivo."
+  ],
+  "Select at least two eligible windows.": [
+    "Выберите хотя бы два подходящих окна.",
+    "Sélectionnez au moins deux fenêtres compatibles.",
+    "Mindestens zwei geeignete Fenster auswählen.",
+    "Selecciona al menos dos ventanas compatibles.",
+    "Seleziona almeno due finestre compatibili."
+  ],
+  "Select at least one window to add.": [
+    "Выберите хотя бы одно окно для добавления.",
+    "Sélectionnez au moins une fenêtre à ajouter.",
+    "Mindestens ein Fenster zum Hinzufügen auswählen.",
+    "Selecciona al menos una ventana para añadir.",
+    "Seleziona almeno una finestra da aggiungere."
+  ],
+  "Windows refreshed. Select the windows you want to group.": [
+    "Список обновлён. Выберите окна для группы.",
+    "Fenêtres actualisées. Choisissez celles à regrouper.",
+    "Fenster aktualisiert. Zu gruppierende Fenster auswählen.",
+    "Ventanas actualizadas. Elige las que quieres agrupar.",
+    "Finestre aggiornate. Scegli quelle da raggruppare."
+  ],
+  "Group created. Use its tab strip or the member list to switch windows.": [
+    "Группа создана. Переключайтесь вкладками или списком окон.",
+    "Groupe créé. Changez de fenêtre avec les onglets ou la liste.",
+    "Gruppe erstellt. Über Tab-Leiste oder Fensterliste wechseln.",
+    "Grupo creado. Cambia de ventana con las pestañas o la lista.",
+    "Gruppo creato. Alterna le finestre tramite schede o elenco."
+  ],
+  "Windows added to the selected group.": [
+    "Окна добавлены в выбранную группу.",
+    "Fenêtres ajoutées au groupe sélectionné.",
+    "Fenster zur ausgewählten Gruppe hinzugefügt.",
+    "Ventanas añadidas al grupo seleccionado.",
+    "Finestre aggiunte al gruppo selezionato."
+  ],
+  "Group renamed. Save it to update its saved definition.": [
+    "Группа переименована. Сохраните её для обновления определения.",
+    "Groupe renommé. Enregistrez-le pour mettre à jour sa définition.",
+    "Gruppe umbenannt. Zum Aktualisieren der gespeicherten Definition speichern.",
+    "Grupo renombrado. Guárdalo para actualizar su definición.",
+    "Gruppo rinominato. Salvalo per aggiornare la definizione."
+  ],
+  "Tab order updated. Save the group to keep this order.": [
+    "Порядок вкладок изменён. Сохраните группу.",
+    "Ordre des onglets modifié. Enregistrez le groupe pour le conserver.",
+    "Tab-Reihenfolge geändert. Gruppe zum Beibehalten speichern.",
+    "Orden de pestañas actualizado. Guarda el grupo para conservarlo.",
+    "Ordine delle schede aggiornato. Salva il gruppo per mantenerlo."
+  ],
+  "Window detached and its original placement restored.": [
+    "Окно отделено, исходное положение восстановлено.",
+    "Fenêtre détachée et position d'origine rétablie.",
+    "Fenster gelöst und ursprüngliche Position wiederhergestellt.",
+    "Ventana separada y posición original restaurada.",
+    "Finestra separata e posizione originale ripristinata."
+  ],
+  "Group closed. Original placements and show states restored.": [
+    "Группа закрыта. Исходные положения и состояния окон восстановлены.",
+    "Groupe fermé. Positions et états d'origine rétablis.",
+    "Gruppe geschlossen. Ursprüngliche Positionen und Zustände wiederhergestellt.",
+    "Grupo cerrado. Posiciones y estados originales restaurados.",
+    "Gruppo chiuso. Posizioni e stati originali ripristinati."
+  ],
+  "Group definition saved. Restore matches open windows by application, class and exact title.": [
+    "Группа сохранена. Восстановление использует приложение, класс и точный заголовок открытых окон.",
+    "Groupe enregistré. Restauration selon l'application, la classe et le titre exact.",
+    "Gruppe gespeichert. Wiederherstellung nach Anwendung, Klasse und exaktem Titel.",
+    "Grupo guardado. Se comparan aplicación, clase y título exacto.",
+    "Gruppo salvato. Ripristino tramite applicazione, classe e titolo esatto."
+  ],
+  "Saved group restored using already open windows.": [
+    "Группа восстановлена из открытых окон.",
+    "Groupe restauré avec les fenêtres déjà ouvertes.",
+    "Gespeicherte Gruppe aus offenen Fenstern wiederhergestellt.",
+    "Grupo restaurado con las ventanas ya abiertas.",
+    "Gruppo ripristinato con le finestre già aperte."
+  ],
+  "Saved definition deleted. Open application windows were not closed.": [
+    "Сохранённая группа удалена. Окна остались открытыми.",
+    "Définition supprimée. Les fenêtres restent ouvertes.",
+    "Gespeicherte Definition gelöscht. Anwendungsfenster bleiben offen.",
+    "Definición eliminada. Las ventanas siguen abiertas.",
+    "Definizione eliminata. Le finestre restano aperte."
+  ],
+  "Previous session recovered. Missing or exited processes were skipped.": [
+    "Предыдущая сессия восстановлена. Отсутствующие и завершённые процессы пропущены.",
+    "Session précédente récupérée. Processus absents ou terminés ignorés.",
+    "Letzte Sitzung wiederhergestellt. Fehlende oder beendete Prozesse übersprungen.",
+    "Sesión anterior recuperada. Se omitieron procesos ausentes o terminados.",
+    "Sessione precedente recuperata. Processi mancanti o terminati ignorati."
+  ],
+  "Groups restored. Closing WindowTabs.": [
+    "Окна восстановлены. Закрываем WindowTabs.",
+    "Groupes restaurés. Fermeture de WindowTabs.",
+    "Gruppen wiederhergestellt. WindowTabs wird geschlossen.",
+    "Grupos restaurados. Cerrando WindowTabs.",
+    "Gruppi ripristinati. Chiusura di WindowTabs."
+  ],
+  "Groups restored. Installing update.": [
+    "Окна восстановлены. Устанавливаем обновление.",
+    "Groupes restaurés. Installation de la mise à jour.",
+    "Gruppen wiederhergestellt. Update wird installiert.",
+    "Grupos restaurados. Instalando actualización.",
+    "Gruppi ripristinati. Installazione aggiornamento."
+  ],
+  "Choose New group to bring related windows together.": [
+    "Выберите «Новая группа», чтобы объединить связанные окна.",
+    "Choisissez Nouveau groupe pour réunir les fenêtres associées.",
+    "Neue Gruppe auswählen, um zusammengehörige Fenster zu gruppieren.",
+    "Elige Nuevo grupo para reunir ventanas relacionadas.",
+    "Scegli Nuovo gruppo per riunire finestre correlate."
+  ],
+  "Recover the previous session before creating or changing groups.": [
+    "Восстановите предыдущую сессию перед изменением групп.",
+    "Récupérez la session précédente avant de modifier les groupes.",
+    "Vor Gruppenänderungen die letzte Sitzung wiederherstellen.",
+    "Recupera la sesión anterior antes de modificar grupos.",
+    "Recupera la sessione precedente prima di modificare i gruppi."
+  ],
+  "Recover the previous session before installing an update.": [
+    "Восстановите предыдущую сессию перед обновлением.",
+    "Récupérez la session précédente avant une mise à jour.",
+    "Vor der Update-Installation die letzte Sitzung wiederherstellen.",
+    "Recupera la sesión anterior antes de instalar una actualización.",
+    "Recupera la sessione precedente prima di installare un aggiornamento."
+  ],
+  "Finish restoring this group before saving a definition.": [
+    "Завершите восстановление группы перед сохранением.",
+    "Terminez la restauration avant d'enregistrer le groupe.",
+    "Vor dem Speichern die Gruppenwiederherstellung abschließen.",
+    "Termina de restaurar el grupo antes de guardarlo.",
+    "Completa il ripristino del gruppo prima di salvarlo."
+  ],
+  "Saved groups require at least two members.": [
+    "Для сохранения группы нужны хотя бы два окна.",
+    "Un groupe enregistré nécessite au moins deux fenêtres.",
+    "Gespeicherte Gruppen benötigen mindestens zwei Fenster.",
+    "Los grupos guardados requieren al menos dos ventanas.",
+    "I gruppi salvati richiedono almeno due finestre."
+  ],
+  "The limit is 64 saved groups.": [
+    "Можно сохранить не более 64 групп.",
+    "La limite est de 64 groupes enregistrés.",
+    "Höchstens 64 gespeicherte Gruppen möglich.",
+    "El límite es de 64 grupos guardados.",
+    "Il limite è di 64 gruppi salvati."
+  ],
+  "The limit is 16 active groups.": [
+    "Можно создать не более 16 активных групп.",
+    "La limite est de 16 groupes actifs.",
+    "Höchstens 16 aktive Gruppen möglich.",
+    "El límite es de 16 grupos activos.",
+    "Il limite è di 16 gruppi attivi."
+  ],
+  "The limit is 32 windows per group.": [
+    "В группе может быть не более 32 окон.",
+    "La limite est de 32 fenêtres par groupe.",
+    "Höchstens 32 Fenster pro Gruppe möglich.",
+    "El límite es de 32 ventanas por grupo.",
+    "Il limite è di 32 finestre per gruppo."
+  ],
+  "A window is duplicated or already belongs to a group.": [
+    "Окно повторяется или уже входит в группу.",
+    "Une fenêtre est dupliquée ou déjà groupée.",
+    "Ein Fenster ist doppelt vorhanden oder bereits gruppiert.",
+    "Una ventana está duplicada o ya pertenece a un grupo.",
+    "Una finestra è duplicata o già raggruppata."
+  ],
+  "Unknown tab.": [
+    "Неизвестная вкладка.",
+    "Onglet inconnu.",
+    "Unbekannter Tab.",
+    "Pestaña desconocida.",
+    "Scheda sconosciuta."
+  ],
+  "Unknown group.": [
+    "Неизвестная группа.",
+    "Groupe inconnu.",
+    "Unbekannte Gruppe.",
+    "Grupo desconocido.",
+    "Gruppo sconosciuto."
+  ],
+  "Invalid window bounds.": [
+    "Недопустимые размеры окна.",
+    "Dimensions de fenêtre non valides.",
+    "Ungültige Fensterabmessungen.",
+    "Dimensiones de ventana no válidas.",
+    "Dimensioni finestra non valide."
+  ],
+  "Use a group name of 1 to 80 characters without control characters.": [
+    "Имя группы должно содержать от 1 до 80 символов без управляющих символов.",
+    "Utilisez un nom de 1 à 80 caractères sans caractères de contrôle.",
+    "Gruppenname mit 1 bis 80 Zeichen ohne Steuerzeichen verwenden.",
+    "Usa un nombre de 1 a 80 caracteres sin caracteres de control.",
+    "Usa un nome di 1–80 caratteri senza caratteri di controllo."
+  ],
+  "Saved group must contain 2 to 32 windows.": [
+    "Сохранённая группа должна содержать от 2 до 32 окон.",
+    "Un groupe enregistré doit contenir de 2 à 32 fenêtres.",
+    "Gespeicherte Gruppe muss 2 bis 32 Fenster enthalten.",
+    "El grupo guardado debe contener entre 2 y 32 ventanas.",
+    "Il gruppo salvato deve contenere da 2 a 32 finestre."
+  ],
+  "Window identity changed while capturing its original placement. Refresh the list.": [
+    "Окно изменилось при сохранении положения. Обновите список.",
+    "L'identité de la fenêtre a changé. Actualisez la liste.",
+    "Fensteridentität beim Speichern geändert. Liste aktualisieren.",
+    "La identidad de la ventana cambió. Actualiza la lista.",
+    "L'identità della finestra è cambiata. Aggiorna l'elenco."
+  ],
+  "This group is awaiting restoration. Retry Close group or Detach; switching and regrouping are disabled.": [
+    "Группа ожидает восстановления. Повторите закрытие или отделение; переключение отключено.",
+    "Ce groupe attend sa restauration. Réessayez de le fermer ou de détacher ; le changement est désactivé.",
+    "Gruppe wartet auf Wiederherstellung. Schließen oder Lösen erneut versuchen; Wechseln ist deaktiviert.",
+    "El grupo espera restauración. Reintenta cerrar o separar; los cambios están desactivados.",
+    "Il gruppo attende il ripristino. Riprova a chiuderlo o separare; il cambio è disabilitato."
+  ],
+  "Window event subscription failed. Use Refresh windows to synchronize groups.": [
+    "Не удалось подписаться на события окон. Обновите список для синхронизации.",
+    "Abonnement aux événements impossible. Actualisez les fenêtres pour synchroniser.",
+    "Fensterereignisse konnten nicht abonniert werden. Fenster zum Synchronisieren aktualisieren.",
+    "Falló la suscripción a eventos. Actualiza las ventanas para sincronizar.",
+    "Registrazione eventi non riuscita. Aggiorna le finestre per sincronizzare."
+  ],
+  "Cannot create the tab strip. Restoring the affected group.": [
+    "Не удалось создать панель вкладок. Восстанавливаем группу.",
+    "Impossible de créer les onglets. Restauration du groupe.",
+    "Tab-Leiste konnte nicht erstellt werden. Gruppe wird wiederhergestellt.",
+    "No se pudo crear la barra de pestañas. Restaurando el grupo.",
+    "Impossibile creare la barra di schede. Ripristino del gruppo."
+  ],
+  "Window worker is busy or unavailable: {}. Try again.": [
+    "Обработчик окон занят или недоступен: {}. Повторите попытку.",
+    "Le gestionnaire est occupé ou indisponible : {}. Réessayez.",
+    "Fensterverarbeitung beschäftigt oder nicht verfügbar: {}. Erneut versuchen.",
+    "El gestor está ocupado o no disponible: {}. Reinténtalo.",
+    "Il gestore è occupato o non disponibile: {}. Riprova."
+  ],
+  "Update was not installed because the window worker could not accept the request. Retry Download and install.": [
+    "Обновление не установлено: обработчик не принял запрос. Повторите скачивание и установку.",
+    "Mise à jour non installée : demande refusée. Réessayez le téléchargement et l'installation.",
+    "Update nicht installiert: Anfrage nicht angenommen. Download und Installation erneut starten.",
+    "No se instaló la actualización: solicitud rechazada. Reintenta la descarga e instalación.",
+    "Aggiornamento non installato: richiesta rifiutata. Riprova download e installazione."
+  ],
+  "Update was not installed: {}": [
+    "Обновление не установлено: {}",
+    "Mise à jour non installée : {}",
+    "Update nicht installiert: {}",
+    "No se instaló la actualización: {}",
+    "Aggiornamento non installato: {}"
+  ],
+  "Update was not installed: {}. Resolve recovery errors and click Download and install again.": [
+    "Обновление не установлено: {}. Устраните ошибки восстановления и повторите установку.",
+    "Mise à jour non installée : {}. Résolvez les erreurs de récupération puis réessayez.",
+    "Update nicht installiert: {}. Wiederherstellungsfehler beheben und Installation erneut starten.",
+    "No se instaló la actualización: {}. Resuelve los errores de recuperación y reintenta.",
+    "Aggiornamento non installato: {}. Risolvi gli errori di ripristino e riprova."
+  ],
+  "Installed version: {}. Checking GitHub…": [
+    "Установлена версия: {}. Проверяем GitHub…",
+    "Version installée : {}. Recherche sur GitHub…",
+    "Installierte Version: {}. GitHub wird geprüft…",
+    "Versión instalada: {}. Consultando GitHub…",
+    "Versione installata: {}. Controllo GitHub…"
+  ],
+  "Recover the previous session before downloading and installing an update.": [
+    "Восстановите предыдущую сессию перед скачиванием и установкой обновления.",
+    "Récupérez la session précédente avant de télécharger une mise à jour.",
+    "Vor Download und Installation die letzte Sitzung wiederherstellen.",
+    "Recupera la sesión anterior antes de descargar e instalar una actualización.",
+    "Recupera la sessione precedente prima di scaricare e installare un aggiornamento."
+  ],
+  "Downloading and verifying the update. WindowTabs will restore groups and restart after installation.": [
+    "Скачиваем и проверяем обновление. WindowTabs восстановит окна и перезапустится после установки.",
+    "Téléchargement et vérification. WindowTabs restaurera les groupes puis redémarrera.",
+    "Update wird geladen und geprüft. WindowTabs stellt Gruppen wieder her und startet neu.",
+    "Descargando y verificando. WindowTabs restaurará los grupos y se reiniciará.",
+    "Download e verifica. WindowTabs ripristinerà i gruppi e si riavvierà."
+  ],
+  "Installed: {}. Version {} is available. Download and install will restart WindowTabs.": [
+    "Установлено: {}. Доступна версия {}. Установка перезапустит WindowTabs.",
+    "Installée : {}. Version {} disponible. L'installation redémarrera WindowTabs.",
+    "Installiert: {}. Version {} verfügbar. Die Installation startet WindowTabs neu.",
+    "Instalada: {}. Versión {} disponible. La instalación reiniciará WindowTabs.",
+    "Installata: {}. Versione {} disponibile. L'installazione riavvierà WindowTabs."
+  ],
+  "Installed version: {}. You are up to date on the stable channel.": [
+    "Установлена версия: {}. Обновлений стабильной версии нет.",
+    "Version installée : {}. Vous utilisez la dernière version stable.",
+    "Installierte Version: {}. Stabile Version ist aktuell.",
+    "Versión instalada: {}. Tienes la última versión estable.",
+    "Versione installata: {}. La versione stabile è aggiornata."
+  ],
+  "Installed: {}. Check failed: {}": [
+    "Установлено: {}. Ошибка проверки: {}",
+    "Installée : {}. Échec de la recherche : {}",
+    "Installiert: {}. Prüfung fehlgeschlagen: {}",
+    "Instalada: {}. Falló la búsqueda: {}",
+    "Installata: {}. Controllo non riuscito: {}"
+  ],
+  "Downloading update: {}% ({} / {} KiB). The installed EXE is unchanged until verification succeeds.": [
+    "Скачивание: {}% ({} / {} КиБ). Текущий EXE не изменится до успешной проверки.",
+    "Téléchargement : {} % ({} / {} Kio). L'EXE reste inchangé jusqu'à la vérification.",
+    "Download: {}% ({} / {} KiB). Die installierte EXE bleibt bis zur Prüfung unverändert.",
+    "Descargando: {}% ({} / {} KiB). El EXE no cambia hasta completar la verificación.",
+    "Download: {}% ({} / {} KiB). L'EXE non cambia prima della verifica riuscita."
+  ],
+  "Verified. Restoring groups before installation and restart…": [
+    "Проверка завершена. Восстанавливаем окна перед установкой и перезапуском…",
+    "Vérification terminée. Restauration avant installation et redémarrage…",
+    "Geprüft. Gruppen werden vor Installation und Neustart wiederhergestellt…",
+    "Verificado. Restaurando grupos antes de instalar y reiniciar…",
+    "Verificato. Ripristino dei gruppi prima di installazione e riavvio…"
+  ],
+  "Installation failed: {}": [
+    "Ошибка установки: {}",
+    "Échec de l'installation : {}",
+    "Installation fehlgeschlagen: {}",
+    "Falló la instalación: {}",
+    "Installazione non riuscita: {}"
+  ],
+  "{} windows could not be restored. Close modal dialogs or restart the affected application, then retry recovery.": [
+    "Не удалось восстановить окон: {}. Закройте диалоги или перезапустите приложение и повторите восстановление.",
+    "{} fenêtres non restaurées. Fermez les dialogues ou redémarrez l'application puis réessayez.",
+    "{} Fenster konnten nicht wiederhergestellt werden. Dialoge schließen oder Anwendung neu starten.",
+    "No se restauraron {} ventanas. Cierra los diálogos o reinicia la aplicación y reintenta.",
+    "Impossibile ripristinare {} finestre. Chiudi i dialoghi o riavvia l'applicazione e riprova."
+  ],
+  "Settings were preserved because they cannot be read: {}. Recover windows, then repair the settings file and restart WindowTabs.": [
+    "Настройки сохранены без изменений: {}. Восстановите окна, исправьте файл настроек и перезапустите WindowTabs.",
+    "Paramètres conservés car illisibles : {}. Récupérez les fenêtres, réparez le fichier puis redémarrez.",
+    "Unlesbare Einstellungen beibehalten: {}. Fenster wiederherstellen, Datei reparieren und neu starten.",
+    "Los ajustes se conservaron porque no se pueden leer: {}. Recupera ventanas, repara el archivo y reinicia.",
+    "Impostazioni conservate perché illeggibili: {}. Recupera finestre, ripara il file e riavvia."
+  ],
+  "Detachment did not finish: {}. Close the group to retry restoration.": [
+    "Отделение не завершилось: {}. Закройте группу для повторного восстановления.",
+    "Détachement incomplet : {}. Fermez le groupe pour réessayer.",
+    "Lösen nicht abgeschlossen: {}. Gruppe zum Wiederherstellen schließen.",
+    "No terminó la separación: {}. Cierra el grupo para reintentar.",
+    "Separazione incompleta: {}. Chiudi il gruppo per riprovare."
+  ],
+  "Some windows could not be restored. Retry Close group. {}": [
+    "Некоторые окна не восстановлены. Повторите закрытие группы. {}",
+    "Certaines fenêtres non restaurées. Réessayez de fermer le groupe. {}",
+    "Einige Fenster nicht wiederhergestellt. Gruppe erneut schließen. {}",
+    "No se restauraron algunas ventanas. Reintenta cerrar el grupo. {}",
+    "Alcune finestre non ripristinate. Riprova a chiudere il gruppo. {}"
+  ],
+  "Saved window '{}' is missing or ambiguous. Open it with the same title, refresh, or create a new group.": [
+    "Сохранённое окно «{}» не найдено или неоднозначно. Откройте его с тем же заголовком, обновите список или создайте группу.",
+    "La fenêtre « {} » est absente ou ambiguë. Ouvrez-la avec le même titre, actualisez ou créez un groupe.",
+    "Gespeichertes Fenster '{}' fehlt oder ist mehrdeutig. Mit gleichem Titel öffnen, aktualisieren oder neue Gruppe erstellen.",
+    "La ventana '{}' falta o es ambigua. Ábrela con el mismo título, actualiza o crea otro grupo.",
+    "La finestra '{}' manca o è ambigua. Aprila con lo stesso titolo, aggiorna o crea un gruppo."
+  ],
+  "Could not create group: {}.{}": [
+    "Не удалось создать группу: {}.{}",
+    "Impossible de créer le groupe : {}.{}",
+    "Gruppe konnte nicht erstellt werden: {}.{}",
+    "No se pudo crear el grupo: {}.{}",
+    "Impossibile creare il gruppo: {}.{}"
+  ],
+  "WindowTabs — Window groups": [
+    "WindowTabs — Группы окон",
+    "WindowTabs — Groupes de fenêtres",
+    "WindowTabs — Fenstergruppen",
+    "WindowTabs — Grupos de ventanas",
+    "WindowTabs — Gruppi di finestre"
+  ]
+}

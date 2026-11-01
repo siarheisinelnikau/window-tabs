@@ -54,6 +54,10 @@ pub const ID_EMPTY_HELP: i32 = 160;
 pub const ID_VERSION: i32 = 161;
 pub const ID_PICK_COUNT: i32 = 162;
 pub const ID_EMPTY_ART: i32 = 163;
+pub const ID_LANGUAGE: i32 = 164;
+pub const ID_THEME: i32 = 165;
+pub const ID_LABEL_LANGUAGE: i32 = 166;
+pub const ID_LABEL_THEME: i32 = 167;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WindowKind {
@@ -95,7 +99,11 @@ pub fn clean_row_title(title: &str) -> String {
         .map(|c| if c.is_control() { ' ' } else { c })
         .collect()
 }
-pub fn window_row(window: &crate::model::WindowInfo, active: bool) -> String {
+pub fn window_row(
+    window: &crate::model::WindowInfo,
+    active: bool,
+    language: crate::preferences::Language,
+) -> String {
     let executable = window
         .executable
         .rsplit(['\\', '/'])
@@ -109,19 +117,31 @@ pub fn window_row(window: &crate::model::WindowInfo, active: bool) -> String {
         "{}\n{}{}",
         clean_row_title(&window.title),
         clean_row_title(app),
-        if active { " · Active window" } else { "" }
+        if active {
+            format!(
+                " · {}",
+                crate::localization::text(language, "Active window")
+            )
+        } else {
+            String::new()
+        }
     )
 }
-pub fn group_row(name: &str, count: usize, state: &str) -> String {
+pub fn group_row(
+    name: &str,
+    count: usize,
+    state: &str,
+    language: crate::preferences::Language,
+) -> String {
     format!(
         "{}\n{} {}{}",
         clean_row_title(name),
         count,
-        if count == 1 { "window" } else { "windows" },
+        crate::localization::text(language, if count == 1 { "window" } else { "windows" }),
         if state.is_empty() {
             String::new()
         } else {
-            format!(" · {state}")
+            format!(" · {}", crate::localization::text(language, state))
         }
     )
 }
@@ -159,9 +179,9 @@ pub fn layout(
     let action = height - 98;
     put(ID_BRAND, m + 56, 20, 320, 34);
     put(ID_TAGLINE, m + 56, 58, full - 246, 24);
-    put(ID_NAV_GROUPS, m, 94, 112, 38);
-    put(ID_NAV_SAVED, m + 120, 94, 152, 38);
-    put(ID_NAV_SETTINGS, m + 280, 94, 120, 38);
+    put(ID_NAV_GROUPS, m, 94, 124, 38);
+    put(ID_NAV_SAVED, m + 132, 94, 238, 38);
+    put(ID_NAV_SETTINGS, m + 378, 94, 176, 38);
     if recovery || (!matches!(page, Page::Picker(_)) && (page != Page::Groups || has_groups)) {
         put(
             if recovery { ID_RECOVER } else { ID_NEW },
@@ -233,12 +253,16 @@ pub fn layout(
         }
         Page::Settings => {
             put(ID_LABEL_SETTINGS, m, 150, full, 28);
-            put(ID_HELP, m, 190, full, 38);
-            put(ID_VERSION, m, 248, full, 32);
-            put(ID_STARTUP, m, 300, full, 30);
-            put(ID_CHECK, m, 354, 180, 36);
-            put(ID_INSTALL, m + 192, 354, 220, 36);
-            put(ID_UPDATE_STATUS, m, 416, full, action - 416 + 22);
+            put(ID_LABEL_LANGUAGE, m, 198, 120, 26);
+            put(ID_LANGUAGE, m + 128, 190, 204, 36);
+            put(ID_LABEL_THEME, m + 364, 198, 120, 26);
+            put(ID_THEME, m + 492, 190, 204, 36);
+            put(ID_HELP, m, 246, full, 38);
+            put(ID_VERSION, m, 298, full, 32);
+            put(ID_STARTUP, m, 346, full, 30);
+            put(ID_CHECK, m, 394, 244, 36);
+            put(ID_INSTALL, m + 256, 394, 320, 36);
+            put(ID_UPDATE_STATUS, m, 448, full, action - 448 + 22);
         }
     }
     result
@@ -326,20 +350,31 @@ mod tests {
             bounds: Rect::default(),
         };
         assert_eq!(
-            window_row(&window, true),
+            window_row(&window, true, crate::preferences::Language::English),
             "Notes Budget 2026 .txt\nEditor · Active window"
         );
         assert!(window.title.contains('\n'));
         window.executable = "/apps/notes/editor".into();
         assert_eq!(
-            window_row(&window, false).split_once('\n').unwrap().1,
+            window_row(&window, false, crate::preferences::Language::English)
+                .split_once('\n')
+                .unwrap()
+                .1,
             "editor"
         );
         assert_eq!(
-            group_row("Work\nSaved", 1, "Minimized"),
+            group_row(
+                "Work\nSaved",
+                1,
+                "Minimized",
+                crate::preferences::Language::English
+            ),
             "Work Saved\n1 window · Minimized"
         );
-        assert_eq!(group_row("Work", 2, ""), "Work\n2 windows");
+        assert_eq!(
+            group_row("Work", 2, "", crate::preferences::Language::English),
+            "Work\n2 windows"
+        );
     }
     #[test]
     fn window_icons_use_application_names_and_have_a_generic_fallback() {

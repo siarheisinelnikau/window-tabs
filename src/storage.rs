@@ -14,6 +14,8 @@ const MAX_JSON: u64 = 8 * 1024 * 1024;
 pub struct Settings {
     pub schema: u32,
     pub check_on_startup: bool,
+    pub language: crate::preferences::Language,
+    pub theme: crate::preferences::Theme,
     pub templates: Vec<Template>,
 }
 
@@ -22,6 +24,8 @@ impl Default for Settings {
         Self {
             schema: SCHEMA,
             check_on_startup: true,
+            language: crate::preferences::Language::default(),
+            theme: crate::preferences::Theme::default(),
             templates: vec![],
         }
     }

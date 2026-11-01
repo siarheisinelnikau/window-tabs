@@ -1,14 +1,16 @@
 //! Native controls and a blocking GetMessage loop. All disk/network work is off-thread.
 use crate::{
     controller::{self, Command, GroupView, Snapshot, Worker},
+    localization,
     model::*,
     platform::{self, wide},
+    preferences::{Language, Theme},
     presentation::{self, *},
     storage::Store,
     update::{self, Available},
 };
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     collections::{BTreeSet, HashMap},
     mem::{size_of, zeroed},
     path::PathBuf,
@@ -25,7 +27,11 @@ use windows_sys::{
         Graphics::Gdi::*,
         System::{LibraryLoader::*, SystemServices::SS_OWNERDRAW},
         UI::{
-            Accessibility::*, Controls::*, HiDpi::*, Input::KeyboardAndMouse::*,
+            Accessibility::*,
+            Controls::*,
+            HiDpi::*,
+            Input::KeyboardAndMouse::*,
+            Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass},
             WindowsAndMessaging::*,
         },
     },
@@ -86,6 +92,20 @@ fn palette() -> Palette {
                 selection: GetSysColor(COLOR_HIGHLIGHT),
                 disabled: GetSysColor(COLOR_WINDOW),
                 high_contrast: true,
+            }
+        } else if ACTIVE_THEME.with(Cell::get) == Theme::Dark {
+            Palette {
+                background: art::rgb(25, 24, 34),
+                surface: art::rgb(35, 33, 47),
+                text: art::rgb(241, 239, 250),
+                secondary: art::rgb(185, 180, 202),
+                border: art::rgb(70, 65, 88),
+                accent: art::rgb(133, 115, 241),
+                accent_down: art::rgb(108, 88, 218),
+                on_accent: art::rgb(255, 255, 255),
+                selection: art::rgb(65, 54, 100),
+                disabled: art::rgb(43, 40, 55),
+                high_contrast: false,
             }
         } else {
             Palette {
@@ -149,6 +169,8 @@ static MANAGER: AtomicIsize = AtomicIsize::new(0);
 static EVENT_PENDING: AtomicBool = AtomicBool::new(false);
 static CAPTURE_MODE: AtomicBool = AtomicBool::new(false);
 thread_local! {
+    static ACTIVE_LANGUAGE: Cell<Language> = const { Cell::new(Language::English) };
+    static ACTIVE_THEME: Cell<Theme> = const { Cell::new(Theme::Light) };
     static APP: RefCell<Option<App>> = const { RefCell::new(None) };
     // Out-of-context WinEvent callbacks run on the UI thread that registered them.
     static EVENT_WINDOWS: RefCell<BTreeSet<isize>> = const { RefCell::new(BTreeSet::new()) };
@@ -198,6 +220,9 @@ struct App {
     preferred_group: Option<GroupId>,
     last_status: String,
     pending_text: RefCell<HashMap<i32, String>>,
+    source_text: RefCell<HashMap<i32, String>>,
+    language: Language,
+    theme: Theme,
     title_font: HFONT,
     heading_font: HFONT,
     detail_font: HFONT,
@@ -626,6 +651,103 @@ pub fn run() -> Result<()> {
 }
 
 impl App {
+    fn language_menu(&mut self) {
+        unsafe {
+            let menu = CreatePopupMenu();
+            if menu.is_null() {
+                return;
+            }
+            for (index, language) in Language::ALL.iter().enumerate() {
+                AppendMenuW(
+                    menu,
+                    MF_STRING
+                        | if *language == self.language {
+                            MF_CHECKED
+                        } else {
+                            0
+                        },
+                    index + 1,
+                    wide(language.name()).as_ptr(),
+                );
+            }
+            let mut bounds = RECT::default();
+            GetWindowRect(self.controls[&ID_LANGUAGE], &mut bounds);
+            let action = TrackPopupMenu(
+                menu,
+                TPM_RETURNCMD | TPM_RIGHTBUTTON,
+                bounds.left,
+                bounds.bottom,
+                0,
+                self.window,
+                null(),
+            );
+            DestroyMenu(menu);
+            if action > 0
+                && let Some(language) = Language::ALL.get(action as usize - 1)
+            {
+                self.send(Command::Preferences(*language, self.theme));
+            }
+        }
+    }
+    fn apply_preferences(&mut self) {
+        let language = self.snapshot.settings.language;
+        let theme = self.snapshot.settings.theme;
+        if self.language == language && self.theme == theme {
+            return;
+        }
+        self.language = language;
+        self.theme = theme;
+        ACTIVE_LANGUAGE.with(|value| value.set(language));
+        ACTIVE_THEME.with(|value| value.set(theme));
+        let texts = self.source_text.borrow().clone();
+        for (id, source) in texts {
+            self.set(id, &source);
+        }
+        self.set(ID_LANGUAGE, language.name());
+        self.set(
+            ID_THEME,
+            if theme == Theme::Light {
+                "Light"
+            } else {
+                "Dark"
+            },
+        );
+        self.last_status.clear();
+        self.list_cache = ContentCache::default();
+        self.layout_key = None;
+        self.dirty_manager = true;
+        unsafe {
+            SetWindowTextW(
+                self.window,
+                wide(&localization::text(language, "WindowTabs — Window groups")).as_ptr(),
+            );
+            let dark: i32 = i32::from(theme == Theme::Dark && !palette().high_contrast);
+            windows_sys::Win32::Graphics::Dwm::DwmSetWindowAttribute(
+                self.window,
+                20,
+                &dark as *const _ as *const _,
+                size_of::<i32>() as u32,
+            );
+            if IsWindowVisible(self.window) != 0 && IsIconic(self.window) == 0 {
+                RedrawWindow(
+                    self.window,
+                    null(),
+                    null_mut(),
+                    RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN,
+                );
+            }
+            for strip in self.strips.values() {
+                if strip.shown {
+                    RedrawWindow(
+                        strip.window,
+                        null(),
+                        null_mut(),
+                        RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN,
+                    );
+                }
+            }
+        }
+    }
     unsafe fn new(window: HWND, store: Store, capture: bool) -> Result<Self> {
         let worker = if capture {
             let (sender, receiver) = std::sync::mpsc::sync_channel(1);
@@ -667,6 +789,9 @@ impl App {
             preferred_group: None,
             last_status: String::new(),
             pending_text: RefCell::new(HashMap::new()),
+            source_text: RefCell::new(HashMap::new()),
+            language: Language::English,
+            theme: Theme::Light,
             title_font: null_mut(),
             heading_font: null_mut(),
             detail_font: null_mut(),
@@ -691,6 +816,8 @@ impl App {
                 (ID_VERSION, ""),
                 (ID_PICK_COUNT, "0 windows selected"),
                 (ID_EMPTY_ART, "Grouped windows illustration"),
+                (ID_LABEL_LANGUAGE, "Language"),
+                (ID_LABEL_THEME, "Theme"),
             ] {
                 app.control(id, "STATIC", text, 0)?;
             }
@@ -748,6 +875,8 @@ impl App {
                 (ID_RECOVER, "Recover windows"),
                 (ID_CHECK, "Check for updates"),
                 (ID_INSTALL, "Download and install"),
+                (ID_LANGUAGE, "English"),
+                (ID_THEME, "Light"),
             ] {
                 app.control(
                     id,
@@ -829,6 +958,9 @@ impl App {
             return Err(format!("Cannot create control {id}."));
         }
         self.controls.insert(id, control);
+        if id != ID_NAME {
+            self.source_text.borrow_mut().insert(id, text.to_owned());
+        }
         Ok(())
     }
     fn dpi(&self) -> i32 {
@@ -1083,12 +1215,21 @@ impl App {
         }
     }
     fn set(&self, id: i32, text: &str) {
+        if id != ID_NAME {
+            self.source_text.borrow_mut().insert(id, text.to_owned());
+        }
         if !self.capture
             && unsafe { IsWindowVisible(self.window) == 0 || IsIconic(self.window) != 0 }
         {
             self.pending_text.borrow_mut().insert(id, text.to_owned());
             return;
         }
+        let translated = if id == ID_NAME {
+            text.to_owned()
+        } else {
+            localization::text(self.language, text)
+        };
+        let text = translated.as_str();
         unsafe {
             let mut current =
                 vec![0u16; (GetWindowTextLengthW(self.controls[&id]) + 1).max(1) as usize];
@@ -1186,7 +1327,7 @@ impl App {
                 .members
                 .iter()
                 .enumerate()
-                .map(|(i, w)| window_row(w, i == group.active))
+                .map(|(i, w)| window_row(w, i == group.active, self.language))
                 .collect(),
         );
         self.member_ids = group.members.iter().map(|w| w.identity.clone()).collect();
@@ -1223,9 +1364,18 @@ impl App {
             ID_NAV_GROUPS => self.navigate(Page::Groups),
             ID_NAV_SAVED => self.navigate(Page::Saved),
             ID_NAV_SETTINGS => self.navigate(Page::Settings),
+            ID_LANGUAGE => self.language_menu(),
+            ID_THEME => self.send(Command::Preferences(
+                self.language,
+                if self.theme == Theme::Light {
+                    Theme::Dark
+                } else {
+                    Theme::Light
+                },
+            )),
             ID_CANCEL => self.navigate(Page::Groups),
             ID_NEW => {
-                self.set(ID_NAME, "My workspace");
+                self.set(ID_NAME, &localization::text(self.language, "My workspace"));
                 self.navigate(Page::Picker(None));
                 self.send(Command::Refresh);
             }
@@ -1310,6 +1460,7 @@ impl App {
             return;
         };
         self.snapshot = snapshot;
+        self.apply_preferences();
         self.dirty_manager = true;
         if self.picker_pending {
             if self.snapshot.status.starts_with("Group created.")
@@ -1406,7 +1557,7 @@ impl App {
             .snapshot
             .windows
             .iter()
-            .map(|w| window_row(w, false))
+            .map(|w| window_row(w, false, self.language))
             .collect();
         let new_ids: Vec<_> = self
             .snapshot
@@ -1448,6 +1599,7 @@ impl App {
                         } else {
                             ""
                         },
+                        self.language,
                     )
                 })
                 .collect(),
@@ -1477,7 +1629,7 @@ impl App {
                 .settings
                 .templates
                 .iter()
-                .map(|t| group_row(&t.name, t.members.len(), "Saved"))
+                .map(|t| group_row(&t.name, t.members.len(), "Saved", self.language))
                 .collect(),
         );
         if let Some(index) = saved
@@ -1575,7 +1727,7 @@ impl App {
                             0
                         },
                     id as usize,
-                    wide(label).as_ptr(),
+                    wide(&localization::text(self.language, label)).as_ptr(),
                 );
             }
             let mut bounds = RECT::default();
@@ -1646,7 +1798,8 @@ impl App {
                             | WS_TABSTOP
                             | TCS_BUTTONS
                             | TCS_SINGLELINE
-                            | TCS_TOOLTIPS,
+                            | TCS_TOOLTIPS
+                            | TCS_OWNERDRAWFIXED,
                         0,
                         0,
                         100,
@@ -1656,12 +1809,14 @@ impl App {
                         GetModuleHandleW(null()),
                         null(),
                     );
+                    SetWindowTheme(tabs, w!(""), w!(""));
+                    SetWindowSubclass(tabs, Some(tab_background), 1, 0);
                     for (id, text) in [(STRIP_MENU, "…"), (STRIP_CLOSE, "×")] {
                         CreateWindowExW(
                             0,
                             w!("BUTTON"),
                             wide(text).as_ptr(),
-                            WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+                            WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW as u32,
                             0,
                             0,
                             30,
@@ -1705,7 +1860,11 @@ impl App {
                 {
                     SetWindowTextW(
                         self.controls[&ID_STATUS],
-                        w!("Cannot create the tab strip. Restoring the affected group."),
+                        wide(&localization::text(
+                            self.language,
+                            "Cannot create the tab strip. Restoring the affected group.",
+                        ))
+                        .as_ptr(),
                     );
                     let _ = self.worker.sender.try_send(Command::Close(group.id));
                     continue;
@@ -2311,6 +2470,15 @@ unsafe extern "system" fn strip_proc(
     let manager = MANAGER.load(Ordering::Relaxed) as HWND;
     let group = unsafe { GetWindowLongPtrW(window, GWLP_USERDATA) } as usize;
     match message {
+        WM_DRAWITEM => unsafe { art::draw(lparam as *const DRAWITEMSTRUCT) },
+        WM_ERASEBKGND => {
+            unsafe {
+                let mut rect = RECT::default();
+                GetClientRect(window, &mut rect);
+                art::fill(wparam as HDC, rect, palette().background);
+            }
+            1
+        }
         WM_NOTIFY => {
             let notification = unsafe { &*(lparam as *const NMHDR) };
             if notification.code == TCN_SELCHANGE {
@@ -2359,6 +2527,29 @@ unsafe extern "system" fn strip_proc(
         _ => unsafe { DefWindowProcW(window, message, wparam, lparam) },
     }
 }
+unsafe extern "system" fn tab_background(
+    window: HWND,
+    message: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    id: usize,
+    _: usize,
+) -> LRESULT {
+    if message == WM_ERASEBKGND {
+        unsafe {
+            let mut rect = RECT::default();
+            GetClientRect(window, &mut rect);
+            art::fill(wparam as HDC, rect, palette().background);
+        }
+        return 1;
+    }
+    if message == WM_NCDESTROY {
+        unsafe {
+            RemoveWindowSubclass(window, Some(tab_background), id);
+        }
+    }
+    unsafe { DefSubclassProc(window, message, wparam, lparam) }
+}
 unsafe fn strip_menu(window: HWND, manager: HWND, group: usize) {
     unsafe {
         let menu = CreatePopupMenu();
@@ -2371,7 +2562,13 @@ unsafe fn strip_menu(window: HWND, manager: HWND, group: usize) {
             (7, "Show manager"),
             (1, "Close group and restore windows"),
         ] {
-            AppendMenuW(menu, MF_STRING, id, wide(label).as_ptr());
+            AppendMenuW(
+                menu,
+                MF_STRING,
+                id,
+                wide(&ACTIVE_LANGUAGE.with(|language| localization::text(language.get(), label)))
+                    .as_ptr(),
+            );
         }
         let mut point = POINT::default();
         GetCursorPos(&mut point);
