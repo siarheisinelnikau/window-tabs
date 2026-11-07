@@ -1,0 +1,12 @@
+{
+  "repository": "siarheisinelnikau/window-tabs",
+  "product": "WindowTabs",
+  "kind": "desktop",
+  "assets": [
+    {
+      "name": "WindowTabs-v{version}.exe"
+    }
+  ],
+  "notices": true,
+  "checksum_aliases": []
+}
